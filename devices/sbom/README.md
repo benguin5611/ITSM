@@ -545,7 +545,7 @@ If you are deploying via the legacy AWS CLI flow (not recommended; use Terraform
 
 #### Alternative: System Keychain provisioning (for MDMs without secret env vars)
 
-If your MDM does not support secret/encrypted environment variables for Custom Scripts (e.g., Kandji), distribute the secrets via the System Keychain instead. The main `sbom-audit-spdx.sh` script automatically falls back to reading `SBOM_LAMBDA_URL`, `SBOM_AUTH_TOKEN`, and `SBOM_PRESIGN_SECRET` from `/Library/Keychains/System.keychain` (account `sbom-audit`) when the corresponding env var is unset. Env vars always win when set, so the two methods can coexist (e.g., env vars in CI, keychain on managed devices).
+If your MDM does not support secret/encrypted environment variables for Custom Scripts (e.g., Iru), distribute the secrets via the System Keychain instead. The main `sbom-audit-spdx.sh` script automatically falls back to reading `SBOM_LAMBDA_URL`, `SBOM_AUTH_TOKEN`, and `SBOM_PRESIGN_SECRET` from `/Library/Keychains/System.keychain` (account `sbom-audit`) when the corresponding env var is unset. Env vars always win when set, so the two methods can coexist (e.g., env vars in CI, keychain on managed devices).
 
 To use the keychain path:
 
@@ -782,7 +782,7 @@ Prepares existing SPDX files for converter compatibility:
 **Shared Token Approach:**
 - Single token shared across all devices (suitable for single-tenant deployments)
 - Token stored in Secrets Manager (`device-sbom-audit/auth-token`); Lambda reads at runtime via the `SBOM_AUTH_TOKEN_SECRET_ARN` env var.
-- Token distributed to devices via MDM environment variable (`SBOM_AUTH_TOKEN`)
+- Token distributed to devices via MDM environment variable (`SBOM_AUTH_TOKEN`) or the System Keychain (account `sbom-audit`, service `SBOM_AUTH_TOKEN`); the script tries the env var first and falls back to the keychain
 - Device sends token in `Authorization: {token}` header (exact match, no "Bearer " prefix)
 - Lambda validates token before generating presigned URLs
 
@@ -796,18 +796,24 @@ aws secretsmanager put-secret-value \
   --secret-id device-sbom-audit/auth-token \
   --secret-string "$NEW_TOKEN"
 
-# Update MDM: Edit Custom Script environment variable SBOM_AUTH_TOKEN
-# to the new value. Devices use the new token on the next run.
+# Then update the device side using whichever distribution method you deployed:
 #
-# The presign secret is also distributed to devices via MDM (the device script
-# uses it to compute the HMAC sig). Rotating it requires the same two-step
-# dance: put-secret-value, then update the MDM's SBOM_PRESIGN_SECRET env var.
+#   MDM env var:  Edit Custom Script environment variable SBOM_AUTH_TOKEN
+#                 in your MDM to the new value.
+#   Keychain:     Re-run sbom-keychain-bootstrap.example.sh with the new
+#                 value (it deletes the existing entry before writing).
+#
+# Devices use the new token on the next run.
+#
+# The presign secret is distributed alongside the auth token (same two methods).
+# Rotating it follows the same two-step dance:
 #
 #   NEW_PRESIGN=$(openssl rand -hex 32)
 #   aws secretsmanager put-secret-value \
 #     --secret-id device-sbom-audit/presign-secret \
 #     --secret-string "$NEW_PRESIGN"
-#   # Then update SBOM_PRESIGN_SECRET in your MDM to match.
+#   # Then update SBOM_PRESIGN_SECRET on the device side (MDM env var or
+#   # re-run the keychain bootstrap).
 ```
 
 ### Threat Model
@@ -1243,9 +1249,15 @@ Syft stderr is captured during the scan and displayed on failure (last 20 lines)
 
 ```bash
 # Error: "SBOM_LAMBDA_URL environment variable not set"
-# Solution: Set in MDM custom-script environment variables
 # Get URL from: aws lambda get-function-url-config --function-name device-sbom-audit
-# Add to your MDM: SBOM_LAMBDA_URL='https://abc123.lambda-url.us-east-1.on.aws/'
+#
+# Solution (choose one):
+#   - MDM env var:  Add SBOM_LAMBDA_URL='https://abc123.lambda-url.ap-southeast-2.on.aws/'
+#                   to your Custom Script's environment variables.
+#   - Keychain:     Run sbom-keychain-bootstrap.example.sh on the device
+#                   (or verify the existing entry):
+#                     security find-generic-password -a sbom-audit \
+#                       -s SBOM_LAMBDA_URL -w /Library/Keychains/System.keychain
 ```
 
 ### sbomnix Produces Invalid SPDX
@@ -1293,13 +1305,13 @@ aws secretsmanager get-secret-value \
 |----------|----------|---------|-------------|
 | `SBOM_BUCKET` | Yes | - | S3 bucket name |
 | `SBOM_AUTH_TOKEN_SECRET_ARN` | Yes | - | ARN of the Secrets Manager secret holding the shared auth token. Fetched at cold start; cached for the Lambda execution-environment lifetime. |
-| `SBOM_PRESIGN_SECRET_ARN` | Yes | - | ARN of the Secrets Manager secret holding the HMAC presign secret. The same secret value is also distributed to devices via MDM as `SBOM_PRESIGN_SECRET`; Lambda and device compute the HMAC independently and the values must match. |
+| `SBOM_PRESIGN_SECRET_ARN` | Yes | - | ARN of the Secrets Manager secret holding the HMAC presign secret. The same secret value is also distributed to devices (via MDM env var or System Keychain) as `SBOM_PRESIGN_SECRET`; Lambda and device compute the HMAC independently and the values must match. |
 | `AWS_REGION` | No | Lambda region | Override AWS region |
 
 **Security Notes:**
 - Both secrets live in AWS Secrets Manager (`device-sbom-audit/auth-token` and `device-sbom-audit/presign-secret`) for Lambda's reads. The Lambda's IAM role has `secretsmanager:GetSecretValue` scoped to exactly those two ARNs; every read is recorded in CloudTrail.
-- Both values are also distributed to devices via MDM (`SBOM_AUTH_TOKEN` and `SBOM_PRESIGN_SECRET`). The auth token authenticates the presign request; the presign secret participates in a two-party HMAC that binds each upload to the originating device. **An attacker needs both secrets to forge an upload — auth token alone is insufficient.**
-- Rotating either secret requires updating both Secrets Manager AND MDM.
+- Both values are also distributed to devices via MDM env vars (`SBOM_AUTH_TOKEN` and `SBOM_PRESIGN_SECRET`) or via the System Keychain (provisioned by [`sbom-keychain-bootstrap.example.sh`](sbom-keychain-bootstrap.example.sh)). The auth token authenticates the presign request; the presign secret participates in a two-party HMAC that binds each upload to the originating device. **An attacker needs both secrets to forge an upload — auth token alone is insufficient.**
+- Rotating either secret requires updating both Secrets Manager AND the device-side copy (MDM env var or keychain).
 - Hostname validation (AS prefix) is always enforced.
 
 ### Script Configuration
@@ -1308,12 +1320,12 @@ aws secretsmanager get-secret-value \
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `SBOM_LAMBDA_URL` | Yes (production) | Lambda Function URL for presigned uploads (configured in your MDM) |
-| `SBOM_AUTH_TOKEN` | Yes (production) | Authentication token (configured in your MDM; matches Secrets Manager `device-sbom-audit/auth-token`) |
-| `SBOM_PRESIGN_SECRET` | Yes (production) | HMAC secret used to sign upload metadata (configured in your MDM; matches Secrets Manager `device-sbom-audit/presign-secret`) |
+| `SBOM_LAMBDA_URL` | Yes (production) | Lambda Function URL for presigned uploads (MDM env var or System Keychain) |
+| `SBOM_AUTH_TOKEN` | Yes (production) | Authentication token (MDM env var or System Keychain; matches Secrets Manager `device-sbom-audit/auth-token`) |
+| `SBOM_PRESIGN_SECRET` | Yes (production) | HMAC secret used to sign upload metadata (MDM env var or System Keychain; matches Secrets Manager `device-sbom-audit/presign-secret`) |
 | `SBOM_SKIP_DELAY` | No | If set, skips the random thundering herd delay (useful for testing) |
 
-**Note:** All three production environment variables must be set via MDM. Script has no hardcoded defaults.
+**Note:** All three production secrets must be available at runtime. The script reads each from its env var if set, otherwise from `/Library/Keychains/System.keychain` under account `sbom-audit` (see [`sbom-keychain-bootstrap.example.sh`](sbom-keychain-bootstrap.example.sh)). Script has no hardcoded defaults.
 
 **Script Internal Configuration:**
 
