@@ -1,0 +1,35 @@
+# Build artifacts
+# Lambda runtime expects the binary to be named `bootstrap`; the
+# Terraform build outputs to terraform/build/bootstrap and packages it
+# into terraform/<function>.zip. Neither belongs in source control.
+bootstrap
+*.zip
+terraform/build/
+
+# jq atomic-write temp files (used by the device script's clean utility)
+*.tmp
+*.tmp.*
+
+# Terraform
+# - .terraform/ (provider cache) — local, never commit
+# - *.tfstate, *.tfstate.* — backend is S3; any local file is a mistake
+# - *.tfplan — operator-local plan output
+# - .terraform.lock.hcl is *not* listed here: per HashiCorp guidance it
+#   should be committed to pin provider versions.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# sbomnix output (generated alongside Nix SBOMs; not part of the device
+# SBOM payload, cleaned up by safe_delete_file in the script)
+http_cache.sqlite
+
+# Test output — don't commit actual SBOMs. (The committed
+# spdx-2.3-schema.json doesn't end in `.spdx.json` so it's unaffected.)
+*.spdx.json
+sbom-test-*/
