@@ -1,6 +1,6 @@
 # Automated Device SBOM Collection (SPDX Format)
 
-Monthly automated SBOM collection from macOS developer machines in SPDX 2.3 format. Devices scan the Nix profile (via sbomnix) and every package manager [Syft](https://github.com/anchore/syft) supports — Homebrew, pip/pipx, npm/yarn/pnpm, Go modules, Cargo, Ruby gems, Java/Maven, Cocoapods, and others — validate locally, then upload to Lambda + S3 with schema validation.
+Monthly automated SBOM collection from macOS developer machines in SPDX 2.3 format. Devices scan the Nix profile (via [sbomnix](https://github.com/tiiuae/sbomnix)) and every package manager [Syft](https://github.com/anchore/syft) supports — Homebrew, pip/pipx, npm/yarn/pnpm, Go modules, Cargo, Ruby gems, Java/Maven, Cocoapods, and others — validate locally, then upload to Lambda + S3 with schema validation.
 
 **TL;DR:** Bash script on devices → Lambda presign → S3 upload → Lambda validation → Long-term storage
 
