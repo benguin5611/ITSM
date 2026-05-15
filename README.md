@@ -14,7 +14,14 @@ A few principles:
 
 ## Contents
 
-Empty for now. Tools will land here as they're built, each in its own directory with a local README covering what it does, what it needs, and how to run it.
+### [devices/](devices/)
+
+Docs and tooling for the device fleet — workstations, MDM, and anything that runs on a developer's machine.
+
+- **[devices/macos-storage-cleanup.md](devices/macos-storage-cleanup.md)** — practical guide to diagnosing high disk usage on macOS and reclaiming space safely. APFS volume structure, snapshots, language toolchain caches, IDE caches, and what's safe to delete.
+- **[devices/sbom/](devices/sbom/)** — automated monthly SBOM collection from macOS developer machines in SPDX 2.3 format. On-device bash script, Go Lambda that issues presigned URLs and validates uploads, and Terraform for the S3 bucket, IAM, KMS, logs, alarms, and secrets.
+
+Each subfolder has its own README covering deployment, operations, and any gotchas.
 
 ## License
 
