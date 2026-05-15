@@ -242,7 +242,9 @@ After the apply, distribute both secrets via your MDM:
 
 ```bash
 # Auth token → MDM custom-script env var SBOM_AUTH_TOKEN
-terraform output -raw auth_token | pbcopy
+aws secretsmanager get-secret-value \
+  --secret-id device-sbom-audit/auth-token \
+  --query SecretString --output text
 
 # Presign secret → MDM custom-script env var SBOM_PRESIGN_SECRET
 aws secretsmanager get-secret-value \
@@ -829,7 +831,7 @@ aws secretsmanager put-secret-value \
 - **Why necessary:** Without this, anyone with AWS credentials can write directly to `uploads/` prefix
 - **5 security controls:**
   1. Denies all cross-account access (prevents external AWS accounts from accessing bucket)
-  2. Denies direct uploads to `uploads/` unless from Lambda execution (blocks internal AWS users)
+  2. Denies direct uploads to `uploads/` unless from the Lambda execution role (blocks other in-account IAM users and roles; the account root principal is implicitly allowed but cannot be denied by a resource policy on a same-account bucket regardless)
   3. Enforces HTTPS/TLS for all operations (prevents plaintext transmission)
   4. Enforces AES-256 encryption on all uploads (ensures encryption at rest)
   5. Uses `aws:userId` matching for robust principal validation (works with AssumeRole/STS)

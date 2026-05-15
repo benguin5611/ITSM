@@ -167,6 +167,13 @@ func router(ctx context.Context, event json.RawMessage) (interface{}, error) {
 
 // handleFunctionURL generates presigned S3 upload URL
 func handleFunctionURL(ctx context.Context, request events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error) {
+	// Cap presign-path work at 10s. The function-level timeout is 120s to
+	// accommodate the S3 validation path; presign is sub-second in practice,
+	// so a tight per-handler budget shrinks the concurrency window a
+	// slow-loris attacker can hold.
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	// Only accept POST requests
 	if request.RequestContext.HTTP.Method != "POST" {
 		return response(405, `{"error":"method not allowed"}`), nil
@@ -179,7 +186,7 @@ func handleFunctionURL(ctx context.Context, request events.LambdaFunctionURLRequ
 		subtle.ConstantTimeCompare([]byte(authHeader), []byte(expectedAuth)) != 1 {
 		slog.Warn("unauthorized presign attempt",
 			"remote_addr", request.RequestContext.HTTP.SourceIP,
-			"device_id", request.Headers["x-device-id"],
+			"device_id", truncate(request.Headers["x-device-id"], maxDeviceIDLen),
 			"auth_provided", authHeader != "")
 		return response(401, `{"error":"unauthorized"}`), nil
 	}
@@ -582,21 +589,46 @@ func moveAndDeleteS3Object(ctx context.Context, bucket, srcKey, dstKey string, m
 	copyCtx, copyCancel := context.WithTimeout(ctx, 30*time.Second)
 	defer copyCancel()
 
-	_, err := s3Client.CopyObject(copyCtx, &s3.CopyObjectInput{
+	// Request S3 compute SHA-256 on the destination so we can verify the
+	// copy stored the same bytes the validator hashed. The source was
+	// already verified byte-for-byte in validateS3Object; this catches
+	// (very rare) silent partial-copy failures before we delete the source.
+	copyResp, err := s3Client.CopyObject(copyCtx, &s3.CopyObjectInput{
 		Bucket:               ptr(bucket),
 		CopySource:           ptr(bucket + "/" + srcKey),
 		Key:                  ptr(dstKey),
 		ServerSideEncryption: types.ServerSideEncryptionAes256,
 		Metadata:             metadata,
 		MetadataDirective:    types.MetadataDirectiveReplace,
+		ChecksumAlgorithm:    types.ChecksumAlgorithmSha256,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to copy to final location: %w", err)
 	}
 
+	// S3 returns SHA-256 base64-encoded; the metadata checksum is hex.
+	expectedHex := metadata["checksum"]
+	expectedBytes, decodeErr := hex.DecodeString(expectedHex)
+	if decodeErr == nil && copyResp.CopyObjectResult != nil && copyResp.CopyObjectResult.ChecksumSHA256 != nil {
+		expectedB64 := base64.StdEncoding.EncodeToString(expectedBytes)
+		if *copyResp.CopyObjectResult.ChecksumSHA256 != expectedB64 {
+			deleteS3Object(ctx, bucket, dstKey)
+			return fmt.Errorf("checksum mismatch on copied object: expected %s, got %s", expectedB64, *copyResp.CopyObjectResult.ChecksumSHA256)
+		}
+	}
+
 	deleteS3Object(ctx, bucket, srcKey)
 
 	return nil
+}
+
+// truncate caps s to at most n bytes for safe logging of attacker-controlled
+// header values. Returns s unchanged when within limit.
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
 }
 
 // presignSignature computes HMAC-SHA256 signature for presigned URL verification

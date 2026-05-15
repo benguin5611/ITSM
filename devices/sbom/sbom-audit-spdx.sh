@@ -109,8 +109,21 @@ if [ "${1:-}" = "clean" ]; then
 		exit 1
 	fi
 
-	# Use temporary file for atomic writes (prevents partial output on disk full)
-	tmp_out="${CLEAN_OUTPUT}.tmp.$$"
+	# Refuse to follow a pre-existing symlink at the output path. Defends
+	# against a symlink-swap attack where someone pre-creates $CLEAN_OUTPUT
+	# pointing at a sensitive file and the script (potentially under MDM as
+	# root) overwrites the target. -L tests for symlink even if the target
+	# is missing.
+	if [ -L "$CLEAN_OUTPUT" ]; then
+		echo "✗ Refusing to write: $CLEAN_OUTPUT is a symlink" >&2
+		exit 1
+	fi
+
+	# Atomic write: use mktemp rather than "${CLEAN_OUTPUT}.tmp.$$" so the
+	# temp path is created with O_CREAT|O_EXCL — an attacker who can write to
+	# dirname "$CLEAN_OUTPUT" and predict PID can no longer pre-place a
+	# symlink at the temp path to redirect the jq write.
+	tmp_out=$(mktemp "${CLEAN_OUTPUT}.tmp.XXXXXX")
 	trap 'rm -f "$tmp_out"' EXIT INT TERM
 
 	echo "Cleaning SPDX document..."

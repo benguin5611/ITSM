@@ -22,12 +22,19 @@ output "cloudwatch_log_group" {
   sensitive   = false
 }
 
-output "auth_token" {
-  description = "Authentication token for SBOM uploads. Fetch with `terraform output -raw auth_token` when distributing via MDM."
-  value       = random_password.auth_token.result
-  sensitive   = true
+output "auth_token_secret_name" {
+  description = "Secrets Manager name for the auth token. Fetch the value with `aws secretsmanager get-secret-value --secret-id <name> --query SecretString --output text` when distributing via MDM."
+  value       = aws_secretsmanager_secret.auth_token.name
+  sensitive   = false
 }
 
-# The presign secret is server-side only and never needs to leave the
-# state. We deliberately do not output it; operators do not handle it.
+output "presign_secret_name" {
+  description = "Secrets Manager name for the presign HMAC secret. Fetch the value with `aws secretsmanager get-secret-value --secret-id <name> --query SecretString --output text` when distributing via MDM."
+  value       = aws_secretsmanager_secret.presign_secret.name
+  sensitive   = false
+}
+
+# Token values themselves are deliberately not output. Distribute via
+# `aws secretsmanager get-secret-value` so every read is auditable in
+# CloudTrail and does not require Terraform state access.
 
