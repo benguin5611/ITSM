@@ -7,6 +7,27 @@
 #   sbom-audit-spdx --test             # Test mode (local output)
 #   sbom-audit-spdx clean INPUT OUT    # Clean SPDX file for conversion
 #   sbom-audit-spdx --help             # Show help
+#
+# Secret sources (in priority order):
+#   1. Environment variables (SBOM_LAMBDA_URL, SBOM_AUTH_TOKEN, SBOM_PRESIGN_SECRET)
+#   2. System Keychain entries under account "sbom-audit"
+#      (provisioned by sbom-keychain-bootstrap.example.sh)
+# An env var, if set to a non-empty value, always wins.
+
+# Keychain fallback — run before `set -e` so a missing entry doesn't abort.
+# Each lookup is silenced and defaults to empty; downstream validation in main()
+# emits the actual user-facing error if a required secret is still unset.
+_sbom_kc="/Library/Keychains/System.keychain"
+_sbom_acct="sbom-audit"
+_kc_lookup() {
+	security find-generic-password -a "$_sbom_acct" -s "$1" -w "$_sbom_kc" 2>/dev/null || true
+}
+: "${SBOM_LAMBDA_URL:=$(_kc_lookup SBOM_LAMBDA_URL)}"
+: "${SBOM_AUTH_TOKEN:=$(_kc_lookup SBOM_AUTH_TOKEN)}"
+: "${SBOM_PRESIGN_SECRET:=$(_kc_lookup SBOM_PRESIGN_SECRET)}"
+export SBOM_LAMBDA_URL SBOM_AUTH_TOKEN SBOM_PRESIGN_SECRET
+unset _sbom_kc _sbom_acct
+unset -f _kc_lookup
 
 set -euo pipefail
 

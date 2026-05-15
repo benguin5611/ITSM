@@ -543,6 +543,18 @@ If you are deploying via the legacy AWS CLI flow (not recommended; use Terraform
 
 **Why daily if it runs monthly?** The MDM runs the script daily, but the script checks `~/.sbom-audit/.last-upload-YYYY-MM` marker and exits early if already run this month. This ensures the script executes within the first few days of each month without manual coordination.
 
+#### Alternative: System Keychain provisioning (for MDMs without secret env vars)
+
+If your MDM does not support secret/encrypted environment variables for Custom Scripts (e.g., Kandji), distribute the secrets via the System Keychain instead. The main `sbom-audit-spdx.sh` script automatically falls back to reading `SBOM_LAMBDA_URL`, `SBOM_AUTH_TOKEN`, and `SBOM_PRESIGN_SECRET` from `/Library/Keychains/System.keychain` (account `sbom-audit`) when the corresponding env var is unset. Env vars always win when set, so the two methods can coexist (e.g., env vars in CI, keychain on managed devices).
+
+To use the keychain path:
+
+1. Copy [`sbom-keychain-bootstrap.example.sh`](sbom-keychain-bootstrap.example.sh), replace every `REPLACE_ME` placeholder with the real Secrets Manager values, and paste the edited script into your MDM as a separate Custom Script set to **Run once per device**. Do not commit the edited copy to git.
+2. Deploy `sbom-audit-spdx.sh` as your normal Custom Script. No env vars need to be configured in the MDM — the script reads each secret from the keychain at startup.
+3. Rotate by re-running the bootstrap with new values (it deletes existing entries before writing).
+
+**Trust boundary note:** The bootstrap script contains plaintext secrets while it sits in the MDM's script library. This is acceptable when MDM admin access is already equivalent to secret access in your threat model; it is not acceptable if the script is checked into a broader-access git repo.
+
 ---
 
 ### 4. Verify Deployment
