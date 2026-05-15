@@ -9,6 +9,9 @@ updates:
       time: "09:00"
       timezone: Australia/Sydney
     open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - go
     commit-message:
       prefix: "deps(sbom)"
     groups:
@@ -30,6 +33,9 @@ updates:
       time: "09:00"
       timezone: Australia/Sydney
     open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - terraform
     commit-message:
       prefix: "deps(sbom-tf)"
 
@@ -41,5 +47,8 @@ updates:
       time: "09:00"
       timezone: Australia/Sydney
     open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
     commit-message:
       prefix: "deps(actions)"
