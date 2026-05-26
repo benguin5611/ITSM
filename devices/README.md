@@ -13,6 +13,16 @@ A practical guide to diagnosing high disk usage on macOS and reclaiming space sa
 - Developer-specific stores that quietly grow into tens or hundreds of GB: language toolchain caches, build artefacts, package manager stores, IDE caches.
 - Application caches and what's safe to delete.
 
+### [macos-network-diag/](macos-network-diag/)
+
+User-facing diagnostics for "the internet feels slow on my Mac". Run before toggling wifi or rebooting — those actions destroy the state needed to diagnose. Contains:
+
+- A ~5 second wifi radio check (`wdutil`, SSID, `networkQuality`).
+- A ~90 second comprehensive diagnostic that captures wifi state, VPN tunnel detection, routing, per-hop latency, DNS timing, parallel `tcpdump` on `en0` and the VPN utun during a controlled download, and traceroute.
+- A reading guide mapping signals to likely root causes (wifi radio, ISP, VPN, DNS, host TCP stack).
+
+See [macos-network-diag/README.md](macos-network-diag/README.md).
+
 ### [sbom/](sbom/)
 
 Automated monthly SBOM collection from macOS developer machines in SPDX 2.3 format. A bash script on each device scans Nix and Homebrew packages, the result is uploaded via a presigned URL to S3, and a Lambda validates the SPDX schema before long-term storage. Contains:
@@ -23,6 +33,16 @@ Automated monthly SBOM collection from macOS developer machines in SPDX 2.3 form
 - The SPDX 2.3 JSON schema used for validation.
 
 See [sbom/README.md](sbom/README.md) for deployment, operations, and the full architecture.
+
+### [twingate-mdm/](twingate-mdm/)
+
+MDM audit + remediation scripts for Twingate on macOS. Enforces Twingate runs at login via a locked-down LaunchAgent, and mitigates the zombie utun adapter bug caused by killing Twingate's userspace before its network extension can release the tunnel. Contains:
+
+- `twingate-audit.sh` — compliance check (exit `0` = compliant, `1` = remediate) for MDM compliance loops.
+- `twingate-remediate.sh` — installs the LaunchAgent, `chflags uchg`s it, and cleans up zombie utuns. `--no-zombie-mitigation` flag skips the utun step.
+- Diagnostic bypass via `/var/db/.twingate-diag-bypass` so IT can pause enforcement during triage without touching MDM policy.
+
+See [twingate-mdm/README.md](twingate-mdm/README.md) for the `KeepAlive` design, MDM deployment notes, and known limits.
 
 ## Conventions
 
