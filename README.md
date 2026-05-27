@@ -16,18 +16,11 @@ A few principles:
 
 ### [devices/](devices/)
 
-Docs and tooling for the device fleet — workstations, MDM, and anything that runs on a developer's machine.
-
-- **[devices/macos-storage-cleanup.md](devices/macos-storage-cleanup.md)** — practical guide to diagnosing high disk usage on macOS and reclaiming space safely. APFS volume structure, snapshots, language toolchain caches, IDE caches, and what's safe to delete.
-- **[devices/sbom/](devices/sbom/)** — automated monthly SBOM collection from macOS developer machines in SPDX 2.3 format. Scans the Nix profile via [sbomnix](https://github.com/tiiuae/sbomnix) and every package manager [Syft](https://github.com/anchore/syft) supports (Homebrew, pip, npm, Go modules, Cargo, Ruby gems, Java, Cocoapods, and more). On-device bash script, Go Lambda that issues presigned URLs and validates uploads, and Terraform for the S3 bucket, IAM, KMS, logs, alarms, and secrets.
+Docs and tooling for the device fleet — workstations, MDM, and anything that runs on a developer's machine. Storage cleanup guides, network diagnostics, SBOM collection, MDM audit and remediation scripts.
 
 ### [LLM-skills/](LLM-skills/)
 
-Reusable Claude skills — drop-in compatible with any Anthropic-skills-aware runtime (Claude Code, the Agent SDK). Domain-agnostic where the underlying methodology allows.
-
-- **[LLM-skills/help-centre-article/](LLM-skills/help-centre-article/)** — write, edit, or audit help centre articles. Classifies the article using the four Diátaxis types (tutorial / how-to / reference / explanation), then publishes as Zendesk-compliant HTML — supported elements, allowed inline styles, dark-mode-safe callouts, and table layout patterns. Includes per-type writing templates and an Australian-English style reference.
-
-Each subfolder is a self-contained skill rooted at `SKILL.md`.
+Reusable Claude skills — drop-in compatible with any Anthropic-skills-aware runtime (Claude Code, the Agent SDK). Currently: writing Zendesk-bound help centre articles using the Diátaxis framework.
 
 ## Licence
 
