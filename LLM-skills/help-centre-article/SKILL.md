@@ -464,6 +464,20 @@ No further categorisation. Do not split topics into audience / feature area / do
 - 4–8 topics total. Fewer for a narrowly scoped article; more if it genuinely spans several subjects.
 - Topics name the *subject* of the article. They do not name the article's shape (`troubleshooting`, `faq`) or its type — the type is the separate content tag.
 
+### Image insertion workflow
+
+When an article needs inline images, the cleanest path is to **let Zendesk's WYSIWYG handle the upload and URL wiring**, then fix the cosmetics in source mode. Don't pre-build `<img>` placeholders with fake URLs expecting to transplant real URLs in later — that two-stage flow has more moving parts than it's worth.
+
+**Recommended flow:**
+
+1. Paste the prose-only HTML (no image tags) into the source editor.
+2. Switch to WYSIWYG. Position the cursor at each insertion point and use **Insert Image** — Zendesk uploads the file and inserts a `<figure><img ...></figure>` with the correct URL.
+3. Switch back to source mode and fix two things per image:
+   - **Alt text** — Zendesk's auto-insert uses the filename or empty alt; replace with a meaningful description.
+   - **Sizing styles** — re-add `style="max-width: 100%; display: block;"` on the `<img>` if the layout needs it (this is the only styling worth fighting for; everything else Zendesk inserts is acceptable).
+
+This takes ~10 seconds per image in source mode and avoids the brittleness of URL transplanting.
+
 ### Dark mode compatibility
 
 If your help centre theme supports dark mode — triggered either by an explicit user toggle (often persisted to `localStorage`) or by `@media (prefers-color-scheme: dark)` — articles must render correctly in both modes.
@@ -607,3 +621,4 @@ Every one of these was hit in practice. Ordered from worst to least bad.
 | `<blockquote>` looks unstyled or weird | Inline overrides fighting the theme's `<blockquote>` rules | Remove all inline styles from `<blockquote>` and rely on the theme. If the theme leaves `<blockquote>` unstyled, you can style it inline — but check first. |
 | Table borders disappear against dark page background | Inline `border: 1px solid #e2e8f0` — light grey, near-invisible against a dark page background | Use `#999` for inline table borders. True neutral that reads against both light and dark page backgrounds. |
 | Footnote text reads as the wrong colour in one mode | Inline `color: #718096` (or similar) survives both modes but doesn't match either palette | Use `color: #999`. Reads acceptably as muted text in both modes. |
+| Image URL transplant flow is more brittle than expected | Pre-built `<img>` placeholders in source HTML, then tried to swap in real upload URLs after — two-stage flow with several failure points | Paste prose-only, use WYSIWYG **Insert Image** at each spot, then fix alt text and re-add `max-width: 100%; display: block` in source mode |
