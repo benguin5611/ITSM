@@ -1,0 +1,109 @@
+<!--
+  Zendesk help centre article fragment.
+
+  Structural rules:
+  - The article title is set in Zendesk's metadata (the title field above the body
+    editor). Do NOT include a top-level <h1> here — it produces a duplicate title.
+  - Start the body with <h2> for the first section heading, or with prose if no
+    heading is needed.
+  - `margin` is stripped on every element except <table>. Use `padding` instead.
+  - Don't add `padding-bottom` to headings — most themes provide natural
+    heading-to-content spacing already.
+
+  Colour rules (most modern Zendesk themes have dark mode — see references/callout-patterns.md):
+  - DO NOT set inline `color` on prose elements (<p>, <li>, <h2>, <h3>, <h4>, <td>,
+    <strong>, <span>). Themes typically paint body text via `!important` rules that
+    swap between light and dark palettes. An inline `color` either has no effect
+    (theme !important wins) or breaks dark mode (text stays dark on a now-dark
+    page). Let the theme paint.
+  - DO NOT set inline `font-size` or `font-weight` on <h2>/<h3>/<h4> — themes
+    typically set these with `!important`. Inline values are either ignored or
+    visibly fight the theme.
+  - DO NOT set inline `line-height` on <p> — themes typically set this with
+    `!important`.
+  - For callouts: use translucent rgba() backgrounds, NEVER hardcoded light hex
+    values like #fffaf0. See the Callout section below for the canonical patterns.
+  - For muted text (footnotes, captions): the safest inline colour is `#999`, a
+    neutral mid-grey that reads acceptably in both light and dark mode. Avoid
+    `#718096`, `#2c3e50`, `#1a202c` — they all break dark mode.
+-->
+
+<h2>First section heading</h2>
+
+<p>Body paragraph text. Use prose for explanatory content; reach for tables only when comparing items across consistent attributes.</p>
+
+<ul style="padding-left: 20px;">
+  <li><strong>Bold lead-in:</strong> followed by explanation.</li>
+  <li>Plain list item.</li>
+</ul>
+
+<!--
+  Callout / info-box patterns. Three variants — pick whichever matches the
+  meaning of the content. Full rationale in references/callout-patterns.md.
+
+  Info (blue) — neutral context, "did you know":
+  <div style="background-color: rgba(83, 146, 184, 0.16); border-left: 3px solid #5392b8; padding: 12px 16px; border-radius: 0 8px 8px 0;">
+    <p>Body of the info callout.</p>
+  </div>
+
+  Warning (amber) — reader could lose data or break a workflow:
+  <div style="background-color: rgba(238, 171, 68, 0.18); border-left: 3px solid #eeab44; padding: 12px 16px; border-radius: 0 8px 8px 0;">
+    <p>Body of the warning callout.</p>
+  </div>
+
+  Tip (green) — shortcuts, optional optimisations:
+  <div style="background-color: rgba(25, 195, 134, 0.12); border-left: 3px solid #19c386; padding: 12px 16px; border-radius: 0 8px 8px 0;">
+    <p>Body of the tip callout.</p>
+  </div>
+
+  Multi-paragraph callout — `padding-top` only on the lower elements:
+  <div style="background-color: rgba(238, 171, 68, 0.18); border-left: 3px solid #eeab44; padding: 12px 16px; border-radius: 0 8px 8px 0;">
+    <p>First paragraph — no padding-top, the wrapper's padding handles the gap.</p>
+    <p style="padding-top: 8px;">Second paragraph.</p>
+    <ul style="padding-left: 20px; padding-top: 4px;">
+      <li>List item one.</li>
+      <li>List item two.</li>
+    </ul>
+  </div>
+-->
+
+<!--
+  Wide table pattern (5+ columns or >700px content width).
+
+  Most Zendesk themes render the article container at roughly 770-810px
+  effective width on desktop (typical max container ~1320px with the article
+  column taking ~66% minus padding). Anything wider needs the overflow wrapper.
+
+  Most themes provide NO styling for <table> inside .article-body — every
+  property must be inline. Use mode-portable colours:
+  - Border: #999 (a true neutral that reads against both light and dark page bgs).
+  - Header background: rgba(0, 0, 0, 0.04) (translucent — darkens in light mode,
+    barely shifts in dark mode, never breaks).
+  - Header text colour: #999 with uppercase + letter-spacing for a tidy header
+    row. Body cells should have NO inline `color` — let the theme paint.
+
+  <div style="overflow-x: auto; padding-bottom: 48px;">
+  <table style="width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid #999; min-width: 1000px;">
+    <thead style="background-color: rgba(0, 0, 0, 0.04); border-bottom: 2px solid #999;">
+      <tr>
+        <th style="padding: 12px; text-align: left; font-weight: 600; color: #999; border-right: 1px solid #999; min-width: 200px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">First col</th>
+        <th style="padding: 12px; text-align: center; font-weight: 600; color: #999; border-right: 1px solid #999; min-width: 65px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">Two<br>Words</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid #999;">
+        <td style="padding: 12px; border-right: 1px solid #999; font-weight: 500;">Row label</td>
+        <td style="padding: 12px; text-align: center;">value</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+-->
+
+<h2 style="padding-top: 32px;">Next section heading</h2>
+
+<p>Use <code>padding-top</code> on a heading to create extra space above a major section. Trust the theme for the gap below the heading and for the colour and size of the heading itself.</p>
+
+<h2 style="padding-top: 32px;">Footnotes</h2>
+
+<p style="font-size: 12px; color: #999;"><strong>¹</strong> Footnote definition. `#999` is the only safe inline colour for muted text — it matches `--text-muted` in light mode exactly and reads acceptably in dark mode.</p>
