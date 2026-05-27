@@ -23,9 +23,11 @@ Docs and tooling for the device fleet — workstations, MDM, and anything that r
 
 ### [LLM-skills/](LLM-skills/)
 
-Reusable Claude skills for engineering, security, and decision-making work — adversarial plan review, OWASP security analysis, AI-writing cleanup, business cases, and JSON schema authoring. Domain-agnostic, drop-in compatible with any Anthropic-skills-aware runtime.
+Reusable Claude skills — drop-in compatible with any Anthropic-skills-aware runtime (Claude Code, the Agent SDK). Domain-agnostic where the underlying methodology allows.
 
-Each subfolder has its own README covering deployment, operations, and any gotchas.
+- **[LLM-skills/help-centre-article/](LLM-skills/help-centre-article/)** — write, edit, or audit help centre articles. Classifies the article using the four Diátaxis types (tutorial / how-to / reference / explanation), then publishes as Zendesk-compliant HTML — supported elements, allowed inline styles, dark-mode-safe callouts, and table layout patterns. Includes per-type writing templates and an Australian-English style reference.
+
+Each subfolder is a self-contained skill rooted at `SKILL.md`.
 
 ## Licence
 
