@@ -1,8 +1,8 @@
 ---
 name: release-the-benji
 description: >
-  Stress-test any plan, decision, or approach using a five-agent adversarial review methodology
-  based on cybersecurity team colors (Red, Blue, Purple, White, Yellow). Use this skill whenever
+  Stress-test any plan, decision, or approach using a six-agent adversarial review methodology
+  based on cybersecurity team colors (Red, Blue, Purple, White, Yellow) plus a final Judge. Use this skill whenever
   someone asks to "review my plan", "stress-test this", "adversarial review", "red team this",
   "find weaknesses in my approach", "poke holes in this", "challenge this plan", "devil's advocate",
   "what could go wrong", "review this decision", "release the benji", "benji this", or any
@@ -15,9 +15,9 @@ description: >
 
 # Release the Benji
 
-A domain-agnostic methodology for stress-testing plans and decisions using five independent agents
-with distinct perspectives: attacker, defender, analyst, referee, and builder. Named after the
-team member who was already doing this in every meeting anyway.
+A domain-agnostic methodology for stress-testing plans and decisions using six independent agents
+with distinct perspectives: attacker, defender, analyst, referee, builder, and judge. Named after
+the team member who was already doing this in every meeting anyway.
 
 ## When to use this
 
@@ -28,26 +28,31 @@ adds rigor that a single-pass review can't match.
 
 ## How it works
 
-Five agents with cybersecurity-inspired roles review the plan in a specific dependency order.
-The key insight: Red and Blue never see each other's output, so their analyses are genuinely
-independent. Purple then reconciles them. White and Yellow add proportionality and pragmatism.
+Six agents review the plan in a specific dependency order. The key insight: Red and Blue never
+see each other's output, so their analyses are genuinely independent. Purple then reconciles them.
+White and Yellow add proportionality and pragmatism. The Judge then looks at everything
+holistically and delivers the single, definitive verdict the user reads first.
 
 ```
 [Red #1] ──────┐
-               ├──▶ [Purple #3] ──┬──▶ [White #4]
-[Blue #2] ─────┘                  └──▶ [Yellow #5]
+               ├──▶ [Purple #3] ──┬──▶ [White #4] ─┐
+[Blue #2] ─────┘                  └──▶ [Yellow #5]─┴──▶ [Judge #6]
 ```
+
+For Quick Benji, the Judge fires straight off Purple (no White/Yellow).
 
 ## Two modes
 
-- **Full Benji** (all 5 agents) — for high-stakes decisions: major architecture changes,
+- **Full Benji** (all 6 agents) — for high-stakes decisions: major architecture changes,
   business pivots, significant policy decisions, anything expensive to reverse.
-- **Quick Benji** (Red + Blue + Purple only) — for moderate decisions where you just want to
-  find blind spots fast without the full proportionality/pragmatism pass.
+- **Quick Benji** (Red + Blue + Purple + Judge) — for moderate decisions where you just want to
+  find blind spots fast and get a verdict, without the full proportionality/pragmatism pass.
+
+The Judge runs in both modes — it is the final consolidated recommendation the user reads.
 
 When the user doesn't specify, infer from context. If unsure, ask:
-> "Full Benji or Quick Benji? Full runs all five agents including proportionality and
-> pragmatism checks. Quick just finds blind spots fast."
+> "Full Benji or Quick Benji? Full runs all six agents including proportionality and
+> pragmatism checks. Quick just finds blind spots fast then jumps to the Judge's verdict."
 
 ## Orchestration: step by step
 
@@ -89,25 +94,50 @@ For **Full Benji**, launch both after Purple completes:
 - **White** gets Purple's recommendations + original plan summary (scope/constraints)
 - **Yellow** gets the original plan summary + Purple's recommendations
 
-### 5. Synthesize
+### 5. Launch the Judge (always — final agent in both modes)
 
-After all agents complete, produce the final output using the synthesis template in
-`references/agent-prompts.md`.
+The Judge is the final agent and produces the user-facing verdict. Wait for all prior agents
+to finish before launching.
 
-**Quick Benji synthesis:**
-- Pipeline stats (e.g., "Red raised 15 points, Purple validated 6")
-- Purple's validated recommendations as the output
-- Note that proportionality and pragmatism weren't assessed
+The Judge receives:
+- Plan summary
+- Red Team output
+- Blue Team output
+- Purple Team output
+- White Team output (Full Benji only — pass "Not run (Quick Benji)" for Quick)
+- Yellow Team output (Full Benji only — pass "Not run (Quick Benji)" for Quick)
 
-**Full Benji synthesis:**
-- Pipeline stats across all five agents
-- White's accepted recommendations as the primary output
-- Yellow's simplification flags and buildability concerns
-- Emergent patterns:
-  - **Green Team** (Blue + Yellow convergence) — where defenses become more buildable
-  - **Orange Team** (Red + Yellow convergence) — where hardening becomes more pragmatic
+The Judge is allowed — and expected — to disagree with prior agents. It is not a mechanical
+summarizer; it weighs all the outputs and decides what should actually be done and not done.
 
-### 6. Offer to update the plan
+### 6. Present the final output
+
+The Judge's verdict IS the final output. Prefix it with a short pipeline summary so the user
+can see what work was done, then present the Judge's output verbatim. Do not paraphrase the
+Judge or add your own recommendations on top — that would dilute the point of having a single
+final arbiter.
+
+**Format:**
+
+```
+## Adversarial Review — [Full Benji / Quick Benji]
+
+### Pipeline Summary
+- Red Team raised **[N]** attack points
+- Blue Team identified **[N]** strengths and rebutted **[N]** criticisms
+- Purple Team validated **[N]** of Red's points ([N] critical, [N] high, [N] moderate, [N] low/cosmetic)
+[Full Benji only:]
+- White Team accepted **[N]** recommendations, rejected **[N]**, modified **[N]**
+- Yellow Team rated complexity as **[verdict]** and flagged **[N]** buildability concerns
+
+[Paste the Judge's verdict here verbatim]
+```
+
+For Full Benji, you may optionally include a short "Emergent Patterns" section below the
+Judge if Green Team (Blue + Yellow) or Orange Team (Red + Yellow) convergence is notable —
+but only if it adds signal the Judge didn't already cover.
+
+### 7. Offer to update the plan
 
 Always offer to produce an updated version of the plan with the accepted changes applied.
 Include a short plan-diff preview (one line per change, using +/~/- prefixes) so the user
@@ -123,6 +153,8 @@ The agent prompts are designed to produce genuinely independent, non-generic ana
 - Purple delivers *verdicts with severity ratings*, not "maybe consider this"
 - White *filters for proportionality* — prevents gold-plating
 - Yellow *speaks as a builder* — catches paper-reasonable complexity that causes real pain
+- The Judge *makes the call* — explicitly names what to do, what not to do, and why,
+  rather than averaging the prior agents
 
 If outputs are generic, add one line of domain context to the plan input (e.g., "This is a
 cloud infrastructure migration plan" or "This is a hiring process redesign"). Domain context
