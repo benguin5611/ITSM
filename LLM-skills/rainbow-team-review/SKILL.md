@@ -1,18 +1,18 @@
 ---
 name: rainbow-team-review
 description: >
-  Stress-test any plan, decision, or approach using a structured multi-agent adversarial review
-  methodology based on cybersecurity team colors — Gray (ground-truth verification), Red (attacker),
-  Blue (defender), Black (out-of-band adversary), Purple (analyst), White (referee), Yellow
-  (builder), Gold (crisis strategist) — plus a final Judge that delivers a single consolidated
-  verdict. Use this skill whenever someone asks to "review my plan", "stress-test this",
-  "adversarial review", "red team this", "rainbow team this", "find weaknesses in my approach",
-  "poke holes in this", "challenge this plan", "devil's advocate", "what could go wrong",
-  "review this decision", "release the benji", "benji this", or any variation of wanting critical,
-  structured feedback on a plan before committing. Also trigger when someone pastes a plan,
-  architecture doc, strategy, or proposal and asks for feedback — even casually. Works for code
-  architecture, business strategy, hiring decisions, product launches, policy changes, process
-  designs, or anything else that benefits from adversarial thinking before execution.
+  Structured multi-agent adversarial review for any plan, decision, or approach. Ten
+  independent agents modelled on cybersecurity rainbow teaming, plus a final Judge that
+  consolidates findings into one actionable verdict. See `references/agents/` for the
+  per-agent specs and `references/orchestration.md` for the cross-agent flow. Use this
+  skill whenever someone asks to "review my plan", "stress-test this", "adversarial
+  review", "red team this", "rainbow team this", "release the benji", "benji this",
+  "find weaknesses", "poke holes", "challenge this plan", "devil's advocate", "what
+  could go wrong", or any variation of wanting critical structured feedback on a plan
+  before committing. Also trigger when someone pastes a plan, architecture doc,
+  strategy, or proposal and asks for feedback. Works for code architecture, business
+  strategy, hiring decisions, product launches, policy changes, process designs, or
+  anything else where adversarial thinking before execution matters.
 ---
 
 # Rainbow Team Review
@@ -135,7 +135,7 @@ Pass the full plan text as `{{PLAN_TEXT}}` to every agent's prompt. Never substi
 ### 2. Launch Gray Team (Phase 0 — runs first, alone)
 
 Gray Team establishes ground truth. It runs before Red and Blue so its output anchors every
-subsequent agent. Read `references/agent-prompts.md` for the exact Gray prompt.
+subsequent agent. Read `references/agents/00-gray.md` for the exact Gray prompt.
 
 Gray produces four outputs:
 - **Fact Check** — verifies every factual claim in the plan against current behaviour
@@ -158,7 +158,7 @@ complete before launching Red and Blue.
 
 ### 3. Launch Red, Blue, and Black in parallel
 
-Read `references/agent-prompts.md` for the exact prompts.
+Read `references/agents/01-red.md`, `02-blue.md`, and `03-black.md` for the exact prompts.
 
 **Red, Blue, and Black must be independent.** None sees the others' output. Spawn all three
 subagents in the same turn, each receiving the full plan text + Gray's output.
@@ -235,106 +235,19 @@ summarizer; it weighs all the outputs and decides what should actually be done a
 The Judge's output leads with a summary table (✅ to take, ❌ to NOT take, ❓ for open question)
 so the user can see the recommendations at a glance, then provides detailed reasoning below.
 
-### 8. Ask the user how much they want to see, then present
+### 8. Present the verdict and offer changes
 
-The Judge generates everything in one pass (reasoning is preserved internally), but you
-present it in stages so the first message stays scannable. Do not paraphrase the Judge or
-add your own recommendations on top — that would dilute the point of having a single final
-arbiter.
+The Judge generates everything in one pass; you present it in stages so the first message
+stays scannable. Don't paraphrase the Judge or layer your own recommendations on top.
 
-**Before showing anything, ask the user how deep they want to go.** The full per-team
-breakdown is a lot of content; many users only want the Judge's summary. Make the
-trade-off explicit:
+The full presentation flow is detailed in [`references/orchestration.md`](references/orchestration.md):
 
-> Two ways to see this review:
-> - **Full breakdown** — what every team surfaced individually (lots of content)
-> - **Summary** — the Judge's verdict only (compact)
->
-> Which would you prefer?
+1. **Ask the user** whether they want the full per-team breakdown (lots of content) or just the Judge's summary (compact).
+2. **Present the Summary** verbatim from the Judge — Key table, Summary Table (with ⚠️ overrides), Open Questions.
+3. **Offer the changes** — each accepted action as one line with ✅ (add) / ✏️ (modify) / 🗑️ (remove) prefix, combined with a detail-on-request option (user can ask for the Judge's reasoning on specific IDs before applying).
+4. **After applying**, remind the user about the Open Questions — they need human decisions before shipping.
 
-If the user chooses **Full breakdown**, present the per-team breakdown FIRST (template
-below), then the Summary. If they choose **Summary** (or don't specify clearly), present
-only the Summary.
-
-**The Summary** — paste the Judge's output verbatim, in this order. Add nothing else:
-
-```
-## Rainbow Team Review — [Full Review / Quick Review]
-
-[Only include a verdict line for "Pause and reconsider" or "Do not proceed" cases.
-For the common "proceed with changes" case, start directly with the Key table.]
-
-### Key
-[Judge's Key table explaining every glyph (✅ ❌ ❓ ⚠️). Priority words are not in the Key —
-"Critical / High / Moderate / Low" is descriptive enough on its own.]
-
-### Summary Table
-[Judge's table — clean ID column, action titles, Adopt? column showing ✅/❌/❓ with `⚠️`
-to the right on override rows (e.g. `✅ ⚠️` or `❌ ⚠️`), plain-text priority
-(Critical / High / Moderate / Low / —), source column with full team names.]
-
-### Open Questions
-[Judge's Q items — Decide / Validate format.]
-```
-
-[Quick Review only, append a single italic line after the Open Questions:]
-> _This was a Quick Review. Proportionality (White), buildability (Yellow), disaster
-> tabletop (Gold), defense-buildability (Green), and attack-plausibility (Orange) were not
-> assessed. Run a Full Review if you want those lenses applied._
-
-**The per-team breakdown template** (only shown when the user chose Full breakdown):
-
-```
-### Per-team breakdown
-- Gray Team verified **[N]** factual claims (**[N]** confirmed, **[N]** wrong/regressions,
-  **[N]** unverifiable), mapped **[N]** concepts, flagged **[N]** rationales
-- Red Team raised **[N]** attack points (design-internal)
-- Blue Team identified **[N]** strengths
-- Black Team surfaced **[N]** out-of-band vectors
-- Purple Team validated **[N]** combined concerns ([N] critical, [N] high, [N] moderate, [N] low)
-[Full Review only:]
-- White Team accepted **[N]**, rejected **[N]**, modified **[N]**
-- Yellow Team rated complexity as **[verdict]**; **[N]** buildability concerns
-- Gold Team tabletop verdict: **[verdict]**; **[N]** pre-mortem recommendations
-- Green Team identified **[N]** high-confidence defenses; flagged **[N]** low-confidence
-- Orange Team identified **[N]** high-confidence attacks; downgraded **[N]** theoretical
-```
-
-### 9. Offer the changes (with optional detail, then remind about Open Questions)
-
-After the Summary is presented, offer the changes the Judge accepts. Each ✅ accepted
-action becomes a single line with an intuitive emoji prefix:
-
-- ✅ — adds new content (new section, new runbook)
-- ✏️ — modifies existing content (changes a value, swaps a variable, edits a step)
-- 🗑️ — removes existing content
-
-Combine the changes list with the detail-on-request option in a single message so the user
-can drill into reasoning before deciding what to apply:
-
-> Here are the changes I'd apply:
-> ✅ [addition]
-> ✏️ [modification]
-> 🗑️ [removal]
->
-> Reply **apply** to apply all, list IDs to apply a subset (e.g. `apply A1, A2`), say
-> **detail on [IDs]** to see the Judge's reasoning first, or **skip** to cancel.
-
-If the user requests detail, paste the Judge's "Actions to take — detail" and "Actions to
-NOT take — detail" sections verbatim, filtered to the requested IDs (or "all"). Then
-re-offer the changes message. Loop until they apply or skip.
-
-**After applying** the changes (whether all or a subset), remind the user about the Open
-Questions the review left for human decision. They are not changes to the plan but they
-must be resolved before shipping:
-
-> Changes applied.
->
-> Before you ship, the review left these for you to resolve:
-> - **Q1 · Decide:** [question]
-> - **Q2 · Validate:** [question]
-
-If the Judge produced no Open Questions, omit the reminder entirely.
+See `references/orchestration.md` for the exact templates for each step.
 
 ## Prompt quality notes
 
