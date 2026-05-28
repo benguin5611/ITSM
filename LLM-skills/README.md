@@ -10,9 +10,9 @@ Skills here are deliberately domain-agnostic — no company names, internal tool
 
 ## Contents
 
-### [release-the-benji/](release-the-benji/)
+### [rainbow-team-review/](rainbow-team-review/)
 
-Five-agent adversarial review methodology for stress-testing plans and decisions. Red, Blue, Purple, White, Yellow team perspectives applied to code architecture, strategy, hiring, product launches, anything that benefits from "what could go wrong" before execution.
+Structured multi-agent adversarial review for any plan, decision, or approach. Ten independent agents modelled on the cybersecurity rainbow-team taxonomy — Gray (ground-truth verification), Red (attacker), Blue (defender), Black (out-of-band adversary), Purple (analyst), White (referee), Yellow (builder), Gold (crisis tabletop), Green (defense + buildability), Orange (attack + buildability) — plus a final Judge that consolidates findings into a single actionable verdict. Works for code architecture, business strategy, hiring, product launches, policy changes, anything that benefits from "what could go wrong" before execution. Also activates via "release the benji" / "benji this".
 
 ### [owasp-top-10/](owasp-top-10/)
 
@@ -37,7 +37,7 @@ The exact loading mechanism depends on your runtime:
 - **Claude Code** — drop the folder into `~/.claude/skills/` or your project's skills directory. The skill name comes from the frontmatter `name:` field.
 - **Other agent harnesses** — most support Anthropic's skills format directly. Check your harness docs.
 
-To invoke a skill manually, type `/<skill-name>` (e.g. `/release-the-benji`). For automatic invocation, the agent picks the skill when the user's request matches the description and trigger phrases in `SKILL.md`.
+To invoke a skill manually, type `/<skill-name>` (e.g. `/rainbow-team-review`). For automatic invocation, the agent picks the skill when the user's request matches the description and trigger phrases in `SKILL.md`.
 
 ## Conventions
 
