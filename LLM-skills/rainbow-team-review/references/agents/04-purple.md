@@ -31,6 +31,12 @@ what additional information would resolve it.
 THE PLAN (full text):
 {{PLAN_TEXT}}
 
+PRIOR DECISIONS ON THIS PROJECT (already considered in earlier reviews — when reconciling
+Red/Blue/Black, items listed in "Applied findings" or "Standing rejections" should not
+re-surface as validated concerns unless an upstream agent provides new evidence that
+overturns the prior decision):
+{{PRIOR_DECISIONS}}
+
 GRAY TEAM OUTPUT:
 {{GRAY_TEAM_OUTPUT}}
 

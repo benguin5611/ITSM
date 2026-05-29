@@ -25,6 +25,11 @@ validating concerns? Flag any process concerns.
 THE PLAN (full text):
 {{PLAN_TEXT}}
 
+PRIOR DECISIONS ON THIS PROJECT (already considered in earlier reviews — items in "Applied
+findings" or "Standing rejections" have already been through proportionality assessment;
+focus your assessment on Purple's NEW validated concerns):
+{{PRIOR_DECISIONS}}
+
 GRAY TEAM OUTPUT:
 {{GRAY_TEAM_OUTPUT}}
 

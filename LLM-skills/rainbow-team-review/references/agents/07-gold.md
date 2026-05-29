@@ -34,6 +34,12 @@ include it only if it compounds something more severe.
 THE PLAN (full text):
 {{PLAN_TEXT}}
 
+PRIOR DECISIONS ON THIS PROJECT (already considered in earlier reviews — your tabletop
+scenarios should include the failure modes raised in "Accepted residuals" (with their stated
+triggers) and should NOT include scenarios listed in "Standing rejections" unless you have new
+evidence that the rejection's rationale no longer holds):
+{{PRIOR_DECISIONS}}
+
 GRAY TEAM OUTPUT:
 {{GRAY_TEAM_OUTPUT}}
 

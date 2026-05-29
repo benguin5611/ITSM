@@ -44,6 +44,12 @@ job is what Red can't see because Red is reading the plan as written.
 THE PLAN (full text):
 {{PLAN_TEXT}}
 
+PRIOR DECISIONS ON THIS PROJECT (already considered in earlier reviews — do not re-raise
+out-of-band vectors listed in "Applied findings" or "Standing rejections"; if you have new
+evidence that should overturn a prior decision, frame it explicitly as such with the
+evidence cited):
+{{PRIOR_DECISIONS}}
+
 GRAY TEAM OUTPUT:
 {{GRAY_TEAM_OUTPUT}}
 

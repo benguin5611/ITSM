@@ -85,6 +85,79 @@ user reads first.
 For Quick Review, the Judge fires straight off Purple (no Phase 3 or Phase 4 teams). Gray,
 Red, Blue, Black, Purple, and the Judge always run.
 
+## Decision record — persistence across runs
+
+The skill maintains a **decision record** for each project it reviews — a single markdown file
+that captures every finding raised, the decision made, and the rationale. This file is the
+mechanism that stops agents re-litigating the same items on every pass.
+
+**Why this matters:** without it, every review starts from scratch. By pass 2 or 3, a
+substantial fraction of agent findings re-raise items already rejected or already applied —
+this is wasted review cycles AND noise that obscures genuinely new findings. With the
+decision record, the orchestrator primes every agent with the prior decisions, agents naturally
+avoid re-raising them, and signal-to-noise improves with each pass.
+
+The reference template lives at [`references/decision-record-template.md`](references/decision-record-template.md).
+Its structure is current-state-first (indexes, methodology lessons, then per-finding canonical
+records, then audit trail) — optimised for LLM ingestion as anti-noise priming context.
+
+### When the orchestrator interacts with the decision record
+
+1. **At the start of every review (before launching Gray)** — detect whether a decision record
+   for this project exists. If yes, load it and pass its "Applied" and "Standing rejections"
+   sections to every agent as anti-noise priming context. If no, plan to create one after the
+   Judge runs.
+2. **After the user makes decisions on findings** — update the decision record with each
+   accepted/rejected/deferred item, including the user's rationale where given. The
+   orchestrator should write the update in the same step as applying the changes to the plan.
+3. **On every subsequent run for the same project** — load the existing record and prime
+   agents from it. Update it again as new decisions are made.
+
+### Local vs web runtime — where the file lives
+
+- **Local runtimes** (Claude Code, VSCode extension, Claude Desktop, Claude CLI — anything
+  with `Read`/`Write`/`Bash` tool access): auto-create the file at
+  `~/Downloads/<artefact-stem>-decisions.md` (e.g. `~/Downloads/q4-pricing-plan-decisions.md`)
+  on first run. Detect existing files at the same path on subsequent runs. The user can
+  always specify a different path; default to `~/Downloads/` when not specified.
+- **Web runtimes** (Claude.ai, ChatGPT, any environment without filesystem tools): the
+  orchestrator cannot persist files itself. Instead, on first run:
+  1. Generate the decision record content as a fenced code block in the user-facing output.
+  2. Tell the user: *"Save this as `<artefact-stem>-decisions.md` somewhere you can paste it
+     back next time you review this artefact — a Claude.ai project's project knowledge, a
+     ChatGPT custom GPT's knowledge file, a shared note in your team's wiki, or a local file
+     you upload at the start of each session."*
+  3. On subsequent runs, ask the user to paste the prior decisions file content into the
+     conversation before the review starts.
+
+If the orchestrator is uncertain whether it has filesystem access, attempt a `Read` of
+`~/Downloads/` (or the platform-appropriate path) to detect; if the tool isn't available,
+fall back to web behaviour.
+
+### Splitting threshold — ~10k tokens
+
+The decision record is loaded into agent context on every run. Past ~10k tokens it stops
+being efficiently scannable by agents and starts crowding out the actual plan context.
+
+**When the file grows past ~10k tokens (~40k characters as a rough heuristic), split it**
+into two files:
+
+- **`<artefact-stem>-decisions-active.md`** — sections 1–9 of the template (document state,
+  how to use, ID convention, indexes, residuals, methodology lessons, evidence registry,
+  per-finding canonical records). This is the anti-noise priming context loaded into agents.
+- **`<artefact-stem>-decisions-audit.md`** — sections 10–11 (internal consistency fixes,
+  chronological audit trail). Historical, loaded only when a reviewer wants to audit the
+  decision history.
+
+On a split, update the §1 "Document state" metadata in `-active.md` to point at `-audit.md`
+as the historical companion. After the split, only the active file is loaded into agent
+context; the audit file persists for traceability.
+
+If the active file itself starts approaching 10k tokens again after a split, that's the
+signal to **archive resolved per-finding records** — move records whose status hasn't
+changed in N passes (e.g. STANDING REJECTION confirmed three passes in a row) into the
+audit file, keeping just a compact index entry in active.
+
 ## Two modes
 
 - **Full Review** (all 10 agents + Judge) — for high-stakes decisions: major architecture
@@ -105,6 +178,27 @@ When the user doesn't specify, infer from context. If unsure, ask:
 > Black + Purple then jumps straight to the Judge's verdict."
 
 ## Orchestration: step by step
+
+### 0. Load or initialise the decision record (always)
+
+Before Gray runs, handle the decision record per the rules in "Decision record — persistence
+across runs" above:
+
+1. **Detect the runtime.** If you have `Read`/`Write`/`Bash` tools, you're local; otherwise
+   you're web.
+2. **Local:** check for `~/Downloads/<artefact-stem>-decisions.md`. If `<artefact-stem>` is
+   ambiguous, ask the user once: *"What's a short identifier for this project? I'll use it
+   to name the decision record."* If a file exists, read it. If it's been split
+   (`-decisions-active.md` + `-decisions-audit.md`), read only the active file.
+3. **Web:** ask the user: *"Do you have a decision record from a prior review of this
+   artefact? If so, paste it now — I'll use it to prime the agents."* If they have one,
+   ingest it into context. If not, plan to generate one at the end.
+4. **Extract the priming content.** From the decision record, extract §4 (Applied findings),
+   §5 (Standing rejections), §6 (Accepted residuals), and §7 (Methodology lessons). This
+   concatenated extract becomes `{{PRIOR_DECISIONS}}` — passed to every agent.
+5. **If no prior record exists**, set `{{PRIOR_DECISIONS}}` to the literal string `"No prior
+   decisions on this project — this is the first review."` and plan to generate the record
+   after the Judge completes.
 
 ### 1. Capture the plan — full text, never a summary
 
@@ -155,6 +249,10 @@ Gray will fall back to describing the domain generically.
 
 Gray's output is passed to every downstream agent as `{{GRAY_TEAM_OUTPUT}}`. Wait for Gray to
 complete before launching Red and Blue.
+
+**Gray also receives `{{PRIOR_DECISIONS}}`** (per step 0 above) — it factors prior decisions
+into the Ground Truth Summary so downstream agents see them via Gray's output as well as
+their own copy of `{{PRIOR_DECISIONS}}`.
 
 ### 3. Launch Red, Blue, and Black in parallel
 
@@ -248,6 +346,35 @@ The full presentation flow is detailed in [`references/orchestration.md`](refere
 4. **After applying**, remind the user about the Open Questions — they need human decisions before shipping.
 
 See `references/orchestration.md` for the exact templates for each step.
+
+### 9. Persist the decision record (always — after user applies/rejects)
+
+When the user has finished applying decisions (whether they applied all, applied a subset and
+skipped the rest, or rejected everything), update the decision record with one canonical
+record per Judge action ID. For each finding, write:
+
+- **Status** (APPLIED / NO-OP PRESERVE / FALSE POSITIVE / REJECTED [design call] /
+  REJECTED [not material] / DEFERRED / STANDING REJECTION) — derived from what the user did
+  with the Judge's recommendation.
+- **Severity** — from the Judge's table.
+- **Location in artefact** — where the change went (or would have gone if rejected).
+- **If re-raised** — short guidance for a future reviewer.
+- **Rationale** — the user's reasoning, if they gave one. If they applied without explanation,
+  write *"Accepted per Judge's recommendation."* If they rejected without explanation, ask
+  the user briefly: *"Quick one-line rationale for rejecting [ID] — so a future review knows
+  why?"* Don't fabricate reasoning.
+- **Source** — which agent(s) raised this finding (from the Judge's source column).
+
+Then update §4 (Applied), §5 (Standing rejections), §6 (Residuals), §10 (drift fixes if any
+were applied), and §11 (audit trail — append a new entry for this pass).
+
+**Local runtime:** write the file directly via `Write`/`Edit` to `~/Downloads/`.
+**Web runtime:** present the updated file content as a fenced code block and remind the
+user to save it for the next review (per "Local vs web runtime" above).
+
+**Splitting check:** after the update, if the file is approaching ~10k tokens (~40k characters
+as a rough heuristic), split it per the threshold rules in "Decision record — persistence
+across runs" above.
 
 ## Prompt quality notes
 

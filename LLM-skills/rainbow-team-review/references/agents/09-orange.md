@@ -33,6 +33,11 @@ extracts the high-signal subset of Red's analysis through Yellow's lens.
 THE PLAN (full text):
 {{PLAN_TEXT}}
 
+PRIOR DECISIONS ON THIS PROJECT (already considered in earlier reviews — when filtering Red's
+attacks, items already in "Standing rejections" have been considered and rejected; your filter
+should focus on Red's NEW attacks against the plan from THIS pass):
+{{PRIOR_DECISIONS}}
+
 GRAY TEAM OUTPUT:
 {{GRAY_TEAM_OUTPUT}}
 

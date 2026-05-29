@@ -12,6 +12,7 @@ Per-agent prompts live in `references/agents/` (one file per agent, numbered in 
 Each per-agent file under `references/agents/` contains a self-contained prompt with placeholder variables. Replace them as follows before invoking the agent:
 
 - **All agents** receive `{{PLAN_TEXT}}` — the **full verbatim plan**, never a summary (see SKILL.md §1).
+- **All agents** receive `{{PRIOR_DECISIONS}}` — the anti-noise priming extract from the project's decision record (§4 + §5 + §6 + §7 of the decision-record template). If this is the first review, pass the literal string `"No prior decisions on this project — this is the first review."` See the "Decision record workflow" section below for how to detect, load, and update the record.
 - **All agents except Gray** receive `{{GRAY_TEAM_OUTPUT}}` — Gray Team's ground-truth output.
 - **Gray** additionally receives `{{AVAILABLE_SKILLS}}` — the list of agent skills available in the current runtime (the orchestrator enumerates these from its own context before launching Gray; see SKILL.md §2). Gray uses this list to recommend specific matching skills by name in its Specialist Review Recommendations section.
 - **Purple** additionally receives `{{RED_TEAM_OUTPUT}}`, `{{BLUE_TEAM_OUTPUT}}`, `{{BLACK_TEAM_OUTPUT}}`.
@@ -23,6 +24,114 @@ Each per-agent file under `references/agents/` contains a self-contained prompt 
 **Critical: `{{PLAN_TEXT}}` must always be the full verbatim plan, never a summary.** Summaries silently drop details — including the bugs the summary glosses over. If the plan is long, the agent still gets it in full.
 
 The prompts are domain-agnostic by design. They use "plan," "approach," and "decision" — never domain-specific terms like "code," "deploy," or "revenue."
+
+## Decision record workflow
+
+The decision record is what stops agents re-litigating already-decided findings on every pass. The template is at [`references/decision-record-template.md`](decision-record-template.md). This section is the operational detail for SKILL.md's "Decision record — persistence across runs" — the orchestrator does these things at the times specified there.
+
+### Step 0a — Detect the runtime
+
+Local runtimes have `Read`/`Write`/`Bash`/`Edit` tool access. Web runtimes (Claude.ai, ChatGPT) do not. If you can call `Read` against the user's filesystem, you're local.
+
+### Step 0b — Determine the artefact stem
+
+The file is named `<artefact-stem>-decisions.md`. The stem identifies the project so subsequent runs find the same file. Derive it from:
+
+1. The plan file path if one was provided (`workspace-sharing-otp-plan.md` → stem `workspace-sharing-otp-plan`).
+2. An explicit identifier the user provided (e.g. "this is the Q4 pricing plan" → stem `q4-pricing-plan`).
+3. Otherwise ask: *"What's a short identifier for this project? I'll use it to name the decision record (e.g. `q4-pricing-plan` → `q4-pricing-plan-decisions.md`)."*
+
+Use kebab-case. Avoid spaces. Stems are persistent — once set on first run, all subsequent runs use the same stem.
+
+### Step 0c — Detect or initialise
+
+**Local:**
+
+1. Check `~/Downloads/<stem>-decisions.md`. If found, read it.
+2. If not found, check `~/Downloads/<stem>-decisions-active.md` (the file may have been split — see splitting rules). If found, read it.
+3. If neither exists, this is the first review — set `{{PRIOR_DECISIONS}}` to `"No prior decisions on this project — this is the first review."` and plan to create the file in step 9.
+
+**Web:**
+
+Ask the user: *"Do you have a decision record from a prior review of this artefact? If so, paste it now — I'll use it to prime the agents. If not, I'll create one at the end and you can save it for next time."* If they paste one, treat it the same as the local case. If not, treat as first review.
+
+### Step 0d — Extract priming content
+
+From the loaded decision record, extract sections 4 (Applied), 5 (Standing rejections), 6 (Accepted residuals), and 7 (Methodology lessons). Concatenate with section headers preserved. This is `{{PRIOR_DECISIONS}}` for every agent.
+
+**Do NOT pass §9 (per-finding canonical records) as part of the priming context** — it's the detail-on-lookup layer, and including it would bloat agent context. Agents reference §9 only when an agent's own output cites a prior-finding ID and the orchestrator wants to verify the prior detail.
+
+### Step 9a — Build the per-finding records from the Judge output
+
+After the user has applied/rejected the Judge's recommendations, build one canonical-record entry per Judge action ID:
+
+```
+### [ID] — [Judge's one-line title for the finding]
+- **Status:** [APPLIED / NO-OP PRESERVE / FALSE POSITIVE / REJECTED (design call) / REJECTED (not material) / DEFERRED / STANDING REJECTION]
+- **Severity:** [from Judge's table]
+- **Location:** [where the change went, or where the rejected suggestion would have gone]
+- **If re-raised:** [short guidance — "Do not re-raise: [reason]" for rejections; "Already in §X" for applied items; "Re-evaluate when [trigger]" for residuals]
+- **Rationale:** [user's reasoning if given; otherwise "Accepted per Judge's recommendation." for applied items; ask for one-line rationale on rejections that have none]
+- **Source:** [agent(s) that raised this — Judge's source column]
+```
+
+**Status derivation from user action:**
+
+- User applied → **APPLIED**
+- User skipped + Judge had recommended ❌ → **REJECTED** (sub-type from rationale: "not worth the cost" → not material; "decided against" → design call; "do not re-flag" → STANDING REJECTION)
+- User skipped + Judge had recommended ✅ → ask the user: *"You skipped [ID] which the Judge recommended — rejecting (and why) or deferring?"*
+- User said "track for later" → **DEFERRED** (capture trigger criteria as a §6 row)
+- Judge marked ⚠️ override and user accepted → **APPLIED** with a note explaining the override
+- Finding turned out to misread the plan → **FALSE POSITIVE** (record so future passes don't repeat)
+
+### Step 9b — Update the indexes and audit trail
+
+For each new canonical record:
+
+- **APPLIED** → row in §4 (Applied findings index), row in §9 (per-finding canonical records)
+- **STANDING REJECTION** → row in §5 (Standing rejections), row in §9
+- **DEFERRED** → row in §6 (Accepted residuals) with trigger criteria, row in §9
+- **REJECTED (design call / not material) without standing-rejection language** → row in §9 only (compact); promote to §5 if a future pass re-raises and you reject again
+- **FALSE POSITIVE** → row in §9 only
+
+Append a new entry to §11 (audit trail) summarising the pass: date, mode (Full/Quick), counts (applied / rejected / false positive / deferred), any novel methodology lesson learned.
+
+If you discovered a methodology lesson during the pass (e.g. "agents keep misreading section X"), add it to §7 with an `L-` prefix.
+
+### Step 9c — Write the file
+
+**Local:**
+
+- First run: `Write` the new file to `~/Downloads/<stem>-decisions.md`. Use the template at [`decision-record-template.md`](decision-record-template.md) as the starting structure — replace the italic guidance blocks with actual content; delete the unused example tables.
+- Subsequent runs: `Edit` the existing file. Add new rows to indexes (§4/§5/§6), append new canonical records to §9, append the audit-trail entry to §11. Do NOT rewrite the whole file — preserve every existing record verbatim.
+
+**Web:**
+
+- Present the full updated file content as a fenced markdown code block in the conversation.
+- Add this footer message: *"Save this as `<stem>-decisions.md` somewhere you can paste back next time you review this artefact — a Claude.ai project's project knowledge, a ChatGPT custom GPT's knowledge file, a shared note in your team's wiki, or a local file you upload at the start of each session. The next review of this project will be much more efficient if the agents can read this."*
+
+### Step 9d — Splitting check
+
+After writing, estimate the file size. A rough heuristic: **~40,000 characters ≈ ~10,000 tokens**. If the file exceeds this threshold, split it into two:
+
+- **`<stem>-decisions-active.md`** — sections 1–9 (document state, how-to-use, ID convention, indexes, residuals, methodology lessons, evidence registry, per-finding canonical records). This is the file loaded into agent context on subsequent runs.
+- **`<stem>-decisions-audit.md`** — sections 10–11 (internal consistency fixes, chronological audit trail). Historical; consulted only when a reviewer wants to audit decision history.
+
+Update §1 of `-active.md` to add a pointer row:
+```
+| Audit file | `<stem>-decisions-audit.md` (historical sections 10–11) |
+```
+
+After a split, subsequent runs read only `-active.md` for priming.
+
+**If the active file itself approaches 10k tokens after a split:** that's the signal to archive resolved per-finding records. Move records whose status hasn't changed in three consecutive passes (e.g. STANDING REJECTION confirmed in passes N, N+1, N+2) from `-active.md` §9 into `-audit.md` as an "Archived per-finding records" section. Keep a compact index entry in `-active.md` §5 (one row, no full record). The status hasn't changed → the detail doesn't need to be hot.
+
+### Step 9e — Confirm with the user
+
+After writing/presenting:
+
+- **Local:** *"Decision record updated at `~/Downloads/<stem>-decisions.md`. The next review of this project will read it automatically."* If a split happened, mention both file paths.
+- **Web:** *"Decision record content above. Save it to wherever you'll paste it back next time."*
 
 ## Output assembly — ask depth, present, offer changes, remind about open questions
 

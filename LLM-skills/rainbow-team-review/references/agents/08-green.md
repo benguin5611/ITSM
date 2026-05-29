@@ -31,6 +31,11 @@ filter that extracts the high-signal subset of Blue's analysis through Yellow's 
 THE PLAN (full text):
 {{PLAN_TEXT}}
 
+PRIOR DECISIONS ON THIS PROJECT (already considered in earlier reviews — when filtering Blue's
+defences, items already in "Applied findings" represent established defences; your filter
+should focus on Blue's NEW defences against Purple's validated concerns from THIS pass):
+{{PRIOR_DECISIONS}}
+
 GRAY TEAM OUTPUT:
 {{GRAY_TEAM_OUTPUT}}
 

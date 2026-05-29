@@ -79,6 +79,13 @@ is not a verdict.
 THE PLAN (full text):
 {{PLAN_TEXT}}
 
+PRIOR DECISIONS ON THIS PROJECT (already considered in earlier reviews — your verdict should
+treat these as settled: APPLIED items are in the plan; STANDING REJECTIONS should NOT be in
+your "Actions to take" list; ACCEPTED RESIDUALS should only re-appear if their trigger
+criteria have fired. If an upstream agent has surfaced new evidence that overturns a prior
+decision, address it explicitly in your verdict by referencing the prior-decision ID):
+{{PRIOR_DECISIONS}}
+
 GRAY TEAM OUTPUT:
 {{GRAY_TEAM_OUTPUT}}
 
