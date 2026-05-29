@@ -29,6 +29,11 @@ signal.
 THE PLAN (full text — every section, every code block, every rationale):
 {{PLAN_TEXT}}
 
+PRIOR DECISIONS ON THIS PROJECT (already considered in earlier reviews — factor these into
+your Ground Truth Summary so downstream agents know what's already settled; if a plan claim
+appears to contradict an applied decision, flag it):
+{{PRIOR_DECISIONS}}
+
 OUTPUT FORMAT (use exactly this structure):
 
 ## Fact Check

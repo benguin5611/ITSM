@@ -29,6 +29,11 @@ criticism, say so — that is valuable signal.
 THE PLAN (full text — every section, every code block, every rationale):
 {{PLAN_TEXT}}
 
+PRIOR DECISIONS ON THIS PROJECT (already considered in earlier reviews — do not re-articulate
+defences for items already in "Applied findings" or "Standing rejections" unless they bear on a
+new attack; if a defence has been settled, you can reference it by ID instead of restating):
+{{PRIOR_DECISIONS}}
+
 GRAY TEAM OUTPUT:
 {{GRAY_TEAM_OUTPUT}}
 

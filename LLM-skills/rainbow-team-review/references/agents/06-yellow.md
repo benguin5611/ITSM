@@ -21,6 +21,12 @@ overhead without losing the safety benefit" is useful.
 THE PLAN (full text):
 {{PLAN_TEXT}}
 
+PRIOR DECISIONS ON THIS PROJECT (already considered in earlier reviews — items in "Applied
+findings" are already in the plan as currently written, so your buildability assessment should
+focus on what's being newly added; items in "Standing rejections" don't need to be re-assessed
+for build cost):
+{{PRIOR_DECISIONS}}
+
 GRAY TEAM OUTPUT:
 {{GRAY_TEAM_OUTPUT}}
 
