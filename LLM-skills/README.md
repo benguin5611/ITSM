@@ -18,6 +18,10 @@ Structured multi-agent adversarial review for any plan, decision, or approach. T
 
 Structured OWASP Top 10 2025 security analysis against a file, directory, or diff. Produces a severity-rated report with CWE references and remediation guidance. Supports scoping to a single category (`A01`–`A10`) or scanning only changed files.
 
+### [knowledge-matrix/](knowledge-matrix/)
+
+Builds an engineering knowledge matrix from a team's GitHub pull-request history — a colour-coded heatmap of who is an SME versus a novice in each discipline and each repository, for succession and upskilling planning. Reads every PR and its reviews/comments to score proficiency from authorship, review authority, and who-corrects-whom. Discovers the discipline categories from the repos themselves (languages, services, directories) rather than assuming a fixed list. Two modes: team (the whole picture, with bus-factor and concentration risk) and self (just your own PRs — a private read on your own gaps).
+
 ### [write-like-a-human/](write-like-a-human/)
 
 Detects and removes signs of AI-generated writing. Catches em-dashes, negation pivots, participle-phrase tails, and the vocabulary clusters that survive normal editing. Applies a generic style reference (sentence-case headings, consistent locale, no trailing punctuation on short bullets) on the way out.
