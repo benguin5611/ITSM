@@ -21,6 +21,20 @@ Perform a structured security analysis against three OWASP Top 10 lists:
 
 Produce a severity-rated report with CWE references and actionable remediation guidance.
 
+## Which lists apply?
+
+Apply each list based on what the codebase contains — not by default for everything:
+
+| List | Apply when | Skip when |
+|------|-----------|-----------|
+| **Web Top 10 2025** (A01–A10) | Always — covers all server-side and frontend code | Never skip |
+| **API Top 10 2023** (API1–API10) | Any REST/GraphQL/gRPC routes exist, or an OpenAPI/Swagger spec is present | Pure CLI tool, batch job, or library with no HTTP surface |
+| **LLM Top 10 2025** (LLM01–LLM10) | LLM SDK (`openai`, `anthropic`, `langchain`, etc.) found in deps, OR vector store client present, OR `--llm` flag passed | No LLM integration detected |
+
+**Flags override auto-detection**: `--web`, `--api`, `--llm` restrict the run to only that list. Explicit category codes (e.g. `API3`, `LLM06`) also restrict to only those categories regardless of auto-detection.
+
+The Web and API lists overlap intentionally — A01 (broken access control) and API1 (BOLA) address the same root cause from different angles. Flag both when both patterns are present in the same file.
+
 ## 1. Parse Arguments and Determine Scope
 
 Interpret `$ARGUMENTS` to determine what to scan:
