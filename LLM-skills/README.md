@@ -14,9 +14,13 @@ Skills here are deliberately domain-agnostic — no company names, internal tool
 
 Structured multi-agent adversarial review for any plan, decision, or approach. Ten independent agents modelled on the cybersecurity rainbow-team taxonomy — Gray (ground-truth verification), Red (attacker), Blue (defender), Black (out-of-band adversary), Purple (analyst), White (referee), Yellow (builder), Gold (crisis tabletop), Green (defense + buildability), Orange (attack + buildability) — plus a final Judge that consolidates findings into a single actionable verdict. Works for code architecture, business strategy, hiring, product launches, policy changes, anything that benefits from "what could go wrong" before execution. Also activates via "release the benji" / "benji this".
 
+### [help-centre-article/](help-centre-article/)
+
+Write, edit, or audit help centre articles end to end — classifies the article type (tutorial / how-to / reference / explanation), drafts with the right voice and structure for that type, and produces Zendesk-compliant HTML ready for Guide. Covers Australian English conventions, label and content-tag suggestions, supported HTML elements, allowed inline styles, table layout, dark-mode-safe callouts, and known Zendesk rendering failure modes.
+
 ### [owasp-top-10/](owasp-top-10/)
 
-Structured OWASP Top 10 2025 security analysis against a file, directory, or diff. Produces a severity-rated report with CWE references and remediation guidance. Supports scoping to a single category (`A01`–`A10`) or scanning only changed files.
+Structured security analysis against three OWASP Top 10 lists: Web 2025 (A01–A10), API Security 2023 (API1–API10), and LLM AI 2025 (LLM01–LLM10). Auto-detects which lists apply based on the codebase (API routes present → API list; LLM SDK detected → LLM list; Web always). Produces a severity-rated report with CWE references and remediation guidance. Supports scoping by category code, directory, or changed files only.
 
 ### [knowledge-matrix/](knowledge-matrix/)
 
