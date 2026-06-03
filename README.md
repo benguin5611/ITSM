@@ -20,7 +20,15 @@ Docs and tooling for the device fleet — workstations, MDM, and anything that r
 
 ### [LLM-skills/](LLM-skills/)
 
-Reusable Claude skills — drop-in compatible with any Anthropic-skills-aware runtime (Claude Code, the Agent SDK). Currently: writing Zendesk-bound help centre articles using the Diátaxis framework.
+Reusable Claude skills — drop-in compatible with any Anthropic-skills-aware runtime (Claude Code, the Agent SDK, Cursor, Amp, and others). Current skills:
+
+- **[rainbow-team-review](LLM-skills/rainbow-team-review/)** — ten-agent adversarial review for any plan, decision, or approach
+- **[owasp-top-10](LLM-skills/owasp-top-10/)** — security analysis against OWASP Web 2025, API 2023, and LLM AI 2025
+- **[knowledge-matrix](LLM-skills/knowledge-matrix/)** — engineering knowledge heatmap from GitHub PR history
+- **[help-centre-article](LLM-skills/help-centre-article/)** — write and audit Zendesk Guide articles using the Diátaxis framework
+- **[write-like-a-human](LLM-skills/write-like-a-human/)** — detect and remove AI-writing tells
+- **[business-case](LLM-skills/business-case/)** — structured business case and vendor decision workflow
+- **[custom-json-schema](LLM-skills/custom-json-schema/)** — build and audit JSON schemas with pluggable domain documentation
 
 ## Licence
 
