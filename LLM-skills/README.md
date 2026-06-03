@@ -38,6 +38,10 @@ Structured workflow for building defensible business cases — SaaS tools, infra
 
 Build, edit, and audit JSON schemas in any format. Domain knowledge is plugged in via two companion files (`docs-reference.md` for rules, `skeleton-schema.md` for a seed example) — replace those and the skill adapts to whatever schema format you're working with.
 
+### [clauding-with-code/](clauding-with-code/)
+
+Build orchestrator for shipping a feature or service with an AI coding agent, end to end. Drives the lifecycle in phases — a blocking discovery gate, a single authoritative spec, a small-step build loop, a delegated multi-lens review, a git-proven PR split, and end-of-run archival — pausing for the human at every real fork. Project-agnostic: the concrete stack, CI pipeline, and local replica are bound in one quarantine file (`references/project-binding.md`) you fill in for your own project.
+
 ## Using these skills
 
 The exact loading mechanism depends on your runtime:

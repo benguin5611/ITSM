@@ -29,6 +29,7 @@ Reusable Claude skills — drop-in compatible with any Anthropic-skills-aware ru
 - **[write-like-a-human](LLM-skills/write-like-a-human/)** — detect and remove AI-writing tells
 - **[business-case](LLM-skills/business-case/)** — structured business case and vendor decision workflow
 - **[custom-json-schema](LLM-skills/custom-json-schema/)** — build and audit JSON schemas with pluggable domain documentation
+- **[clauding-with-code](LLM-skills/clauding-with-code/)** — phased build orchestrator for shipping a feature end to end with an AI coding agent, project-agnostic
 
 ## Licence
 
