@@ -13,6 +13,17 @@ meta-code-review composes existing skills; it does not review directly. Pick by 
 | Adversarial defect hunt on AI-generated code | in-house grudge adjudicator | workflow (heavy) |
 | Spec / test-suite evolution across versions | all of the above, composed | interactive + heavy passes on opt-in |
 
+## Domain overlays
+
+When the changeset is detected as domain-specific (or the user specifies `--domain=`), load the matching overlay from `references/domain-*.md` before lens selection. The overlay extends the lens table above and adds domain-specific anti-patterns and ROI gates. A changeset spanning multiple domains loads all relevant overlays; confirm scope at the discovery gate before fan-out.
+
+**Auto-detection signals:**
+| Domain | File patterns |
+|---|---|
+| Frontend | `.vue`, `.ts` in `web/`, `*_pb.ts`, `vitest.config*`, FormKit schema files |
+| Backend | `.go`, `.proto`, `sqlc.yaml`, `*.sql` in `db/`, `buf.gen.yaml`, `buf.work.yaml` |
+| Infrastructure | `*.tf`, `*.tfvars`, `docker-compose*.yml`, `Dockerfile*`, `.github/workflows/*.yml`, identity-provider seed SQL |
+
 ## Reconciliation rules
 - **De-duplicate across lenses** before acting — the same issue surfaces under multiple roles; merge to one finding with the strongest evidence.
 - **Arbitrate conflicts** with the prime-directive precedence (security/privacy > convention-match > no-new-deps > simplicity) and CODE-WINS for descriptions.
