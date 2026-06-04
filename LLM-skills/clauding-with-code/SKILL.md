@@ -11,8 +11,7 @@ description: >
   reviewed, reviewable code without dropping work or cutting corners. NOT for a one-line edit (just
   do it), NOT for pure review of existing code (use meta-code-review), NOT for answering
   questions about a codebase (just answer). When only one narrow lens is wanted — a security pass,
-  an adversarial
-  critique, doc polish — go straight to that skill instead of running the whole lifecycle.
+  adversarial critique, doc polish — go straight to that skill instead.
 ---
 
 # clauding-with-code
