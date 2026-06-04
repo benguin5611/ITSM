@@ -248,6 +248,12 @@ is the full catalogue. The headline ones:
 - **Sweep stale inline copies when you extract a shared list** — refactoring a literal list into a
   named group leaves every consumer that kept its own copy silently behind; treat the extraction as a
   coupling change with a blast-radius sweep, not a local edit.
+- **Review/process IDs are bookkeeping, not product** — finding IDs, test-suite/EARS requirement codes,
+  review-process names (`rainbow review C5`, `dead-code-swarm`), and plan/spec section pointers must
+  never ride into shipped code, comments, test names, filenames, or commit messages. When you implement
+  a coded requirement, carry the prose that explains the behaviour, not the ID that filed it; sweep for
+  the ID shapes before each PR. They're noise that points at a doc the next developer can't see (and an
+  AI-process tell). See anti-pattern A22.
 
 ## Worked example (anonymised composite)
 
