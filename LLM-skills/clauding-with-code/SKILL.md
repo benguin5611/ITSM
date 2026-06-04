@@ -232,8 +232,11 @@ is the full catalogue. The headline ones:
   released boundary, and reserve a proto field only if it actually shipped (a never-released,
   branch-only field is just deleted).
 - **Match the verification oracle to the artefact** — grep proves the weakest thing; a removal needs
-  the compiler + a cross-repo sweep, a schema change needs the breaking-change linter, and so on. And
-  verify the artefact itself, not the commit message — a commit can change a contract without saying so.
+  the compiler + a cross-repo sweep, a schema change needs the breaking-change linter, and an enum or
+  oneof add/remove needs a sweep for hand-written **exhaustive consumers** (a `Record<EnumType, X>`, a
+  switch, a label/icon table): codegen regenerates the bindings but never those, so they silently go
+  stale — and a non-exhaustive map fails open at *runtime*, not at compile. And verify the artefact
+  itself, not the commit message — a commit can change a contract without saying so.
 - **One comprehensive spec + a mandatory testing guide** — don't fragment the spec; don't ship without
   a guide to how it's tested and how to run the tests.
 - **Git is the completeness oracle** for PR splits — never trust memory of what changed.
