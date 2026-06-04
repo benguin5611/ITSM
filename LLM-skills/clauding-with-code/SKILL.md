@@ -119,9 +119,20 @@ Build in small, verifiable units. Every loop:
 
 > **small unit → lint → local CI-mirror (production-replica, fail-fast) → commit → push only when green**
 
-Run linters, formatters, and static analysis **every loop, never bypassed** — they enforce directive
-#1 (security/static linters) and directive #2 (formatters/convention linters) for free. Never bypass
-commit hooks. Test in a **production-replica environment frequently** — tests run against your own
+Run linters, formatters, static analysis, and a **dead-code / unused-symbol sweep** **every loop,
+never bypassed** — they enforce directive #1 (security/static linters) and directive #2
+(formatters/convention linters) for free. For the dead-code sweep use the language's reachability
+tools, not grep (Go: `deadcode`, which tracks `x/tools` and follows the toolchain; the equivalent in
+other languages) — grep both misses indirect/interface/codegen use and over-flags it, so prune (and
+`reserve` retired proto field numbers) on the analyser's verdict, not a text search. But reachability
+tools have a blind spot of their own: for **API-surface symbols** (proto oneof variants, enum values,
+audit-event constants) the *generated* marshalling references them, so a reachability pass like
+`deadcode` reports them live even when nothing emits them — there, run an **emitter census**
+(enumerate each variant/value/constant, count its *non-generated* constructors; **zero emitters =
+dead**, regardless of generated references). Mind toolchain lag: a pinned/older unused-symbol linter
+can panic on a newer language toolchain (e.g. `staticcheck@latest` on Go 1.26) — that's an
+environment limit, not a code finding; switch to the analyser that tracks the toolchain rather than
+chasing the panic. Never bypass commit hooks. Test in a **production-replica environment frequently** — tests run against your own
 code in a bespoke local setup are self-referential; a prod replica surfaces the real failures. See
 [`references/build-loop.md`](references/build-loop.md).
 
@@ -201,8 +212,16 @@ is the full catalogue. The headline ones:
 - **Decide names and renames at the gate** — settle the glossary and any renames before building;
   retrofitting a name cascades through every layer, an undecided rename re-opens repeatedly, and a
   rename can land silently inside an unrelated commit.
-- **Breaking changes are first-class** — inventory the contract, run the breaking-change linter as the
-  oracle, never reuse/renumber a field, enumerate breaks with accept/bridge decisions.
+- **Breaking changes are first-class — and judged at the right contract layer** — inventory the
+  contract, run the breaking-change linter as the oracle, never reuse/renumber a field, enumerate
+  breaks with accept/bridge decisions. Keep two layers distinct: the *wire/RPC contract* (a change
+  there breaks **every** consumer generated from it, first-party clients included) versus the
+  *published API docs*, which are often a curated subset. A service absent from the published docs is
+  still consumed over the underlying RPC protocol, and can still leak a change into those docs via a
+  **shared type** an exposed service also references — so "not in the public spec" means neither "not
+  consumed" nor "safe to break." Diff the **committed** published contract base→branch as the oracle
+  (a local regen drifts on codegen-plugin version skew); additive-only, with no newly-required field
+  on an existing operation, is non-breaking.
 - **Match the verification oracle to the artefact** — grep proves the weakest thing; a removal needs
   the compiler + a cross-repo sweep, a schema change needs the breaking-change linter, and so on. And
   verify the artefact itself, not the commit message — a commit can change a contract without saying so.
