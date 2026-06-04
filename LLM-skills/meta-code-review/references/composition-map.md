@@ -1,6 +1,6 @@
 # Composition map — which lens per scope, and how outputs reconcile
 
-meta-review composes existing skills; it does not review directly. Pick by scope, then de-duplicate and arbitrate.
+meta-code-review composes existing skills; it does not review directly. Pick by scope, then de-duplicate and arbitrate.
 
 ## Lens selection
 | Scope / artefact | Lens(es) | Run via |
