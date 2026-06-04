@@ -65,6 +65,7 @@ const bounded = (label, thunk) => () => withDeadline(thunk(), DEADLINE_MS, label
 
 // ---- config ----
 const A = args || {}
+if (!A.repo || !A.artefact) throw new Error('FAIL-FAST: required args (repo, artefact) not received. Pass them via the args parameter — if using scriptPath, args may not be injected; bake config in directly or pass script inline.')
 const ARTEFACT = A.artefact, CODEMAP = A.codemap, REPO = A.repo
 const OUTDIR = A.outDir || (ARTEFACT ? ARTEFACT.replace(/\/[^/]*$/, '') : '.')
 const PRIORS = [].concat(A.priors || []).join(', ')
@@ -109,7 +110,7 @@ async function apiSurfaceCensus() {
     'You run a DETERMINISTIC EMITTER CENSUS over the API surface under ' + REPO + ' (root strictly inside) — not a judgement call. This catches dead code the other finders structurally miss: a proto `oneof` variant or `enum` value is referenced by GENERATED marshalling, so `deadcode`/staticcheck report it "used" while NOTHING non-generated ever constructs it.\n'
     + 'METHOD (be exhaustive, count — do not sample): (1) Enumerate EVERY proto `oneof` variant, EVERY `enum` value, and every audit/event-type constant in scope. (2) For each, grep for NON-generated (exclude generated-marshalling files), NON-test (exclude `_test`) emitters — the code that actually CONSTRUCTS/SETS it. (3) Report a count per identifier. ZERO non-generated emitters = DEAD CANDIDATE (even though it is public API / ships into the published contract). (4) Trigger hardest where the changeset MOVED a capability between paths — census the OLD path explicitly; orphaned-but-still-defined types are the classic leftover.\n'
     + 'Output a table: identifier | file:line of definition | non-generated emitter count | DEAD CANDIDATE? | the exact grep you ran. Then a one-line tally. Include every zero-emitter item as a candidate; the adjudicator decides.',
-    { label: 'deadcode:api-surface-census', phase: 'Dead Code Sweep', agentType: 'Explore' }))
+    { label: 'deadcode:api-surface-census', phase: 'Dead Code Sweep', agentType: 'Explore' }))()
 }
 async function deadCodeSweep() {
   const partitions = A.deadcodePartitions || []
@@ -117,7 +118,7 @@ async function deadCodeSweep() {
   // The census ALWAYS runs (it needs no partitions); the judgement finders run only when sliced.
   const finds = (await parallel([
     () => apiSurfaceCensus(),
-    ...partitions.map(p => () => bounded('deadcode:' + p.key, () => agent(
+    ...partitions.map(p => bounded('deadcode:' + p.key, () => agent(
       preamble + '\n\nSLICE: ' + p.brief + '\n\nFor each candidate: identifier + file:line, why you suspect it is dead, and the reference-check you ran. Terse bullets; if clean, say "clean".',
       { label: 'deadcode:' + p.key, phase: 'Dead Code Sweep', agentType: 'Explore' }))),
   ])).filter(Boolean)
