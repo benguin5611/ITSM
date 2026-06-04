@@ -161,11 +161,29 @@ const [grudgeCode, deadAdjud] = await parallel([
 ])
 const grudgeOut = (grudgeCode || '(grudge code-review step did not complete)') + '\n\n=== DEAD-CODE ADJUDICATION ===\n\n' + (deadAdjud || '(dead-code adjudication step did not complete)')
 
-// Final synthesis is the classic single-point-of-failure — guard it. If it grows too large to finish in one
-// turn, split it (a planner that returns the change-list, then per-section authors, then a stitch) — do NOT
-// just lengthen the deadline. (This exact step has hung unguarded; the guard converts it to a loud abort.)
-const synth = await critical('synthesise', DEADLINE_MS, () => agent(
-  GROUND + '\n\nYOUR ROLE: author the NEXT VERSION of the artefact by applying the accepted findings.\n\nINPUTS:\n- Security findings (apply each):\n' + ((sec && sec.synthesis) || '(none)') + '\n\n- Adversarial review + dead-code adjudication (fold confirmed defects as requirements/flags; handle the dead-code table as a changeset appendix, NOT requirements):\n' + (grudgeOut || '(none)') + '\n\nRULES: CODE WINS (correct stale claims to the code map); PRESERVE correct content verbatim with its id; ADD new requirements with fresh non-colliding ids + coverage rows; recompute Counts ACCURATELY (requirement bullets == coverage rows; no duplicate ids); the doc has NO open-questions section — return open items SEPARATELY for the human; append a Changelog + a Requirements-coverage map + a dead-code appendix. FINAL ROI PASS (MANDATORY — run last over EVERY proposed test requirement; coverage-and-findings.md §0): Gate A — if the feature under test is NOT built at the code-map HEAD (a proposed/planned/decided-against primitive), DISCARD it to the "Future (build-gated)" appendix (never a TO IMPLEMENT/@blocked suite row), or note it folds into the task that builds the feature; Gate B (survivors only) — CUT restatement, cross-layer duplicates, framework/generated-code tests and cosmetics, KEEP behavioural + security-property coverage. Most EARS rows are directionally correct yet still not worth writing — discard those. Only survivors enter the artefact. House language/style.\n\nWrite the COMPLETE next version to ' + OUTDIR + '/artefact-next.md and a concise memo to ' + OUTDIR + '/changeset.md. Return ONLY (<250 words): the two paths; before/after counts; change-class tally; the ROI-pass prune count (evaluated N / discarded-no-feature E / discarded-low-ROI F / kept K); and the bullet list of OPEN ITEMS needing a human decision.\n\nArtefact: ' + ARTEFACT + '  Code map: ' + CODEMAP,
-  { label: 'synthesise', phase: 'Synthesis' }))
+// Synthesis is split into Planner → Author: reading all inputs AND writing a full document in one
+// turn reliably blew the deadline on large artefact + large finding sets. The Planner is read-heavy
+// (no writing); the Author is write-heavy (no decisions). Each carries roughly half the context.
+// Both steps are critical() — a stalled planner produces nothing for the author to act on.
+const changePlan = await critical('synthesise-plan', DEADLINE_MS, () => agent(
+  GROUND + '\n\nYOUR ROLE: CHANGE PLANNER — read the artefact and all findings, decide what changes, output a structured plan. Do NOT write artefact-next.md yet.\n\n'
+  + 'INPUTS:\n- Security findings:\n' + ((sec && sec.synthesis) || '(none)')
+  + '\n\n- Adversarial review + dead-code adjudication:\n' + (grudgeOut || '(none)')
+  + '\n\nRULES: CODE WINS (correct stale spec claims); honour PRIORS (do not re-litigate settled decisions).\n\n'
+  + 'OUTPUT — three sections, no prose outside them:\n\n'
+  + '## Change list\n| id | target section | action (ADD / CORRECT / REMOVE / PRESERVE) | what changes |\n\n'
+  + '## ROI pass\nFor every proposed test requirement: | requirement | Gate A (feature built at HEAD? Y/N) | Gate B (behavioural/security value? Y/N) | KEEP or DISCARD + reason |\n\n'
+  + '## Open items\nBullet list of items needing a human decision before the next version is final.\n\n'
+  + 'Artefact: ' + ARTEFACT + '  Code map: ' + CODEMAP,
+  { label: 'synthesise-plan', phase: 'Synthesis' }))
+
+const synth = await critical('synthesise-author', DEADLINE_MS, () => agent(
+  GROUND + '\n\nYOUR ROLE: AUTHOR — apply the change plan below mechanically to produce the next artefact version. Make no new decisions; implement exactly what the plan specifies.\n\n'
+  + 'CHANGE PLAN:\n' + (changePlan || '(planner did not complete — no artefact can be written; return a clear error)')
+  + '\n\nRULES: PRESERVE correct content verbatim with its id; ADD with fresh non-colliding ids + coverage rows; recompute Counts ACCURATELY (requirement bullets == coverage rows; no duplicate ids); no open-questions section in the artefact — open items are in the plan above and belong in your return summary only; append Changelog + Requirements-coverage map + dead-code appendix. House language/style.\n\n'
+  + 'Write the COMPLETE next version to ' + OUTDIR + '/artefact-next.md and a concise memo to ' + OUTDIR + '/changeset.md.\n'
+  + 'Return ONLY (<250 words): the two output paths; before/after requirement counts; change-class tally; ROI-pass prune count (evaluated N / no-feature E / low-ROI F / kept K); open items verbatim from the plan.\n\n'
+  + 'Artefact: ' + ARTEFACT + '  Code map: ' + CODEMAP,
+  { label: 'synthesise-author', phase: 'Synthesis' }))
 
 return { securitySynthesis: sec && sec.synthesis, deadCandidates, grudge: grudgeOut, synthSummary: synth }
