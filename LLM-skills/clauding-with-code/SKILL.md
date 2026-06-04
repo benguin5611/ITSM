@@ -4,14 +4,14 @@ description: >
   Build orchestrator for shipping a feature or service with an AI coding agent, end to end and
   with discipline. It does not write the feature for you in one shot; it drives the lifecycle in
   phases — a blocking discovery gate, design and a single authoritative spec, a small-step build
-  loop, review (delegated to meta-code-review), a git-proven PR split, and
-  end-of-run archival — pausing for the human at every real fork and emitting a durable artefact at
-  each phase. Use whenever someone wants to "build this properly", "implement this feature end to
-  end", start a greenfield service, "orchestrate building X", or turn a rough idea into shipped,
-  reviewed, reviewable code without dropping work or cutting corners. NOT for a one-line edit (just
-  do it), NOT for pure review of existing code (use meta-code-review), NOT for answering
-  questions about a codebase (just answer). When only one narrow lens is wanted — a security pass,
-  adversarial critique, doc polish — go straight to that skill instead.
+  loop, review (delegated to meta-code-review), a git-proven PR split, and end-of-run archival —
+  pausing for the human at every real fork and emitting a durable artefact at each phase. Use
+  whenever someone wants to "build this properly", "implement this feature end to end", start a
+  greenfield service, "orchestrate building X", or turn a rough idea into shipped, reviewed,
+  reviewable code without dropping work or cutting corners. NOT for a one-line edit (just do it),
+  NOT for pure review of existing code (use meta-code-review), NOT for answering questions about a
+  codebase (just answer). When only one narrow lens is wanted — a security pass, adversarial
+  critique, doc polish — go straight to that skill instead.
 ---
 
 # clauding-with-code
@@ -35,9 +35,8 @@ the human stays the decision-maker and the code is the medium, not the master. E
 that stance made concrete: propose don't dispose, gate before you build, pause at every real fork.
 
 This skill is **project-agnostic**. Every concrete tool, command, path, and stack detail lives in
-[`references/project-binding.md`](references/project-binding.md) — read it once at the start of a
-real run to bind the generic method to the actual project, and quarantine anything project-specific
-there, never here.
+[`references/project-binding.md`](references/project-binding.md) — read it once at the start of a real run to bind the
+generic method to the actual project, and quarantine anything project-specific there, never here.
 
 ## Prime directives (strict precedence — lower number wins on conflict)
 
@@ -70,7 +69,7 @@ phase until the prior checkpoint is signed off.
 
 ### Phase 0 — Discovery gate (blocking, human-approved)
 
-No code is written until the unknowns are mapped and the human signs off. Produce five things (see
+No code is written until the unknowns are mapped and the human signs off. Produce six things (see
 [`references/discovery-gate-checklist.md`](references/discovery-gate-checklist.md)):
 
 - **A dependency-coupling map** — for every "shared" or "generic" component you intend to build on,
@@ -88,6 +87,9 @@ No code is written until the unknowns are mapped and the human signs off. Produc
   identifier each consumer binds to (route vs symbol vs field), run the breaking-change linter against
   the baseline as the oracle, and enumerate every break with an accept/bridge decision. Breaking changes
   are planned, not discovered.
+- **A filterability & observability design** — for every new data field, an explicit filterability
+  decision (encrypted PII is non-filterable by design); for every new handler or background job, the
+  trace attributes it will emit. Both are expensive to retrofit — decided here, recorded in the spec.
 
 On sign-off — **still before any code** — create the parent tracking issue (an epic for a feature, a
 single issue for small work). You don't need the full breakdown yet, you need the **ID**: cut the
@@ -101,8 +103,13 @@ fact that changes the design, loop back before building.
 
 Design the feature against the prime directives, then write **one comprehensive, self-contained
 specification** from the [`templates/SPEC.md`](templates/SPEC.md) template — the sceptical-engineer
-spec: what, how, why (with the trade-offs and the rejected alternatives), security posture,
-blast-radius, and a **mandatory testing guide**. Keep working notes discrete while you draft, but the
+spec (methodology and writing rules in [`references/fresh-write-spec-and-plan.md`](references/fresh-write-spec-and-plan.md)): what, how, why (with the trade-offs and the rejected alternatives), security posture,
+blast-radius, a **mandatory testing guide**, a **filterability design decision** (for every new
+data field: will users need to filter by it in the platform? encrypted PII is non-filterable by
+design — decide this at design time, not after the schema is built), and an **observability plan**
+(for every new handler or background job: what trace attributes will it emit — at minimum tenant
+ID, primary entity, and operation result; plan instrumentation as a first-class design output, never
+an afterthought). Keep working notes discrete while you draft, but the
 *handed-over* spec is one document plus only minimal companions (an architecture diagram, the PR
 plan) — do not fragment the core spec across files the reader has to chase.
 
@@ -117,7 +124,7 @@ commits, and PRs to the tracker; this step just gives the work its shape on the 
 
 ### Phase 2 — Build loop
 
-Build in small, verifiable units. Every loop:
+Build in small, verifiable units. Before writing each unit, run three parallel checks: **correctness** (right approach, right place?), **existing alternatives** (does this already exist in the repo?), and **pattern/theme consistency** (established convention here?). Then every loop:
 
 > **small unit → lint → local CI-mirror (production-replica, fail-fast) → commit → push only when green**
 
@@ -126,17 +133,16 @@ never bypassed** — they enforce directive #1 (security/static linters) and dir
 (formatters/convention linters) for free. For the dead-code sweep use the language's reachability
 tools, not grep (Go: `deadcode`, which tracks `x/tools` and follows the toolchain; the equivalent in
 other languages) — grep both misses indirect/interface/codegen use and over-flags it, so prune (and
-`reserve` retired proto field numbers) on the analyser's verdict, not a text search. But reachability
-tools have a blind spot of their own: for **API-surface symbols** (proto oneof variants, enum values,
-audit-event constants) the *generated* marshalling references them, so a reachability pass like
-`deadcode` reports them live even when nothing emits them — there, run an **emitter census**
-(enumerate each variant/value/constant, count its *non-generated* constructors; **zero emitters =
-dead**, regardless of generated references). The meta-code-review dead-code swarm runs exactly this
-census (its anti-pattern A12) — delegate to it rather than trust a reachability pass alone. Mind
-toolchain lag: a pinned/older unused-symbol linter
-can panic on a newer language toolchain (e.g. `staticcheck@latest` on Go 1.26) — that's an
-environment limit, not a code finding; switch to the analyser that tracks the toolchain rather than
-chasing the panic. Never bypass commit hooks. Test in a **production-replica environment frequently** — tests run against your own
+`reserve` retired proto field numbers) on the analyser's verdict, not a text search. But reachability tools have a blind spot of their own:
+for **API-surface symbols** (proto oneof variants, enum values, audit-event constants) the *generated*
+marshalling references them, so a reachability pass like `deadcode` reports them live even when nothing
+emits them — there, run an **emitter census** (enumerate each variant/value/constant, count its
+*non-generated* constructors; **zero emitters = dead**, regardless of generated references). The
+meta-code-review dead-code swarm runs exactly this census (its anti-pattern A12) — delegate to it rather
+than trust a reachability pass alone. Mind toolchain
+lag: a pinned/older unused-symbol linter can panic on a newer language toolchain (e.g.
+`staticcheck@latest` on Go 1.26) — that's an environment limit, not a code finding; switch to the
+analyser that tracks the toolchain rather than chasing the panic. Never bypass commit hooks. Test in a **production-replica environment frequently** — tests run against your own
 code in a bespoke local setup are self-referential; a prod replica surfaces the real failures. See
 [`references/build-loop.md`](references/build-loop.md).
 
@@ -145,8 +151,8 @@ code in a bespoke local setup are self-referential; a prod replica surfaces the 
 ### Phase 3 — Review (delegate to meta-code-review)
 
 Do **not** re-implement reviewing. Hand the built work to **`meta-code-review`**, which composes the
-review lenses (`rainbow-team-review`, a security-audit skill / `owasp-top-10`, a simplification /
-dead-code pass), grounds them against the real code, de-duplicates, and arbitrates into one
+review lenses (`rainbow-team-review`, a whole-codebase security audit / `owasp-top-10`, `/simplify`,
+dead-code and grudge passes), grounds them against the real code, de-duplicates, and arbitrates into one
 human-in-the-loop verdict. Feed its findings back into the build loop.
 
 **Checkpoint:** the human accepts the review verdict (or directs another pass).
@@ -183,8 +189,9 @@ Depth and reliability rules are in [`references/orchestration-economy.md`](refer
 the headline rules every run obeys:
 
 - **No silent hangs.** Bound work; make a stall loud and bounded, never an invisible wait.
-- **Wave-batch large fan-outs** (~10 at a time) — the harness caps concurrency, so blasting 100+ at
-  once just makes the queued tail burn its deadline waiting.
+- **Never let a deadline timer count queue time** — the harness caps concurrency and queues the rest
+  harmlessly, but a hand-rolled timer that starts at submission mass-aborts queued workers that never
+  ran; use generous backstops, or wave-batch (~10) so a timer covers only its own run.
 - **Decompose read-all/write-all monoliths** into a bounded planner (reads summaries) + per-unit
   writers (each reads only its slice).
 - **Deadlines are coarse, generous backstops — not the detector.** A liveness watchdog that judges by
@@ -199,7 +206,7 @@ the headline rules every run obeys:
 |---|---|---|
 | Full multi-lens review of the built code | `meta-code-review` | re-reviewing here |
 | Adversarial stress-test of a plan/design | `rainbow-team-review` | inventing your own red-team |
-| Security audit / OWASP pass | a security-audit skill / `owasp-top-10` | a bespoke security checklist |
+| Security audit / OWASP pass | `owasp-top-10` (or your whole-codebase security-audit skill) | a bespoke security checklist |
 | Make a doc read like a human wrote it | `write-like-a-human` | hand-editing AI tells |
 
 ## Load-bearing lessons (why this skill exists)
@@ -275,8 +282,8 @@ A team wants to add **shared, link-based access to a record for an outside party
 - **Phase 2 (build):** small units — schema, then the public endpoints, then the session mint — each
   linted and run against a production-replica stack, committed only when green. A pre-auth panic and an
   access-control boot error surface *in the replica*, exactly as the gate predicted.
-- **Phase 3 (review):** `meta-code-review` runs the lenses, finds a timing oracle and a
-  data-exposure gap; both fixed in the loop.
+- **Phase 3 (review):** `meta-code-review` runs the lenses, finds a timing oracle and a data-exposure gap;
+  both fixed in the loop.
 - **Phase 4 (PR split):** the branch is carved into reviewable PRs, the partition proven exhaustive and
   disjoint against the frozen SHA, the final diff empty.
 - **Phase 5 (archival):** the working notes, logs, and intermediate drafts are swept into the archive;

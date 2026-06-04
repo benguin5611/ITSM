@@ -1,10 +1,12 @@
 # Discovery gate — BLOCKING pre-build checklist (no code until signed off)
 
-The gate is not advisory. **No code is written** until the five artefacts below exist, are
+The gate is not advisory. **No code is written** until the six artefacts below exist, are
 spot-checked, and the human has signed off. The gate exists to surface what will bite you *before*
 a line is committed — coupling you assumed away, assumptions you never checked, an environment that
-behaves nothing like the happy path, names that collide with what's already there, and contract
-breaks nobody planned for. Produce all five, present them, and **stop for explicit human approval.** Concrete tools, commands, and stack specifics → [`project-binding.md`](project-binding.md).
+behaves nothing like the happy path, names that collide with what's already there, contract
+breaks nobody planned for, and design properties that are expensive to retrofit. Produce all six,
+present them, and **stop for explicit human approval.** Concrete tools, commands, and stack
+specifics → [`project-binding.md`](project-binding.md).
 
 ## 1. Dependency-coupling map
 
@@ -102,24 +104,41 @@ consumer. Inventory the contract before touching a schema.
       affects, the fix/mitigation) and decide consciously per break: **accept** (no live consumers,
       pre-warn) or **bridge** (keep the old surface alive alongside the new). Record it in the spec.
 
+## 6. Filterability & observability design
+
+Two design properties that are expensive to retrofit — decide them before the schema or handler shape is fixed.
+
+**Filterability:**
+- [ ] For every new data field or entity attribute: will users need to filter by this value in the platform? State the decision explicitly — do not leave it implicit.
+- [ ] Encrypted or PII fields are **non-filterable by design** (the platform cannot filter on ciphertext). If a field is both sensitive and needs to be filterable, this is a design conflict that must be resolved at the gate — not after the migration.
+- [ ] Confirm the platform's filtering capability supports the data type and cardinality of each field marked filterable. High-cardinality free-text is rarely filterable well; structured enum-like values are. Decide the field type accordingly.
+- [ ] Record each filterability decision in the spec so the next developer knows it was deliberate.
+
+**Observability:**
+- [ ] For every new service handler or background job: what trace/span attributes will it emit? Plan this as a first-class design output. At minimum: tenant ID, primary entity being operated on, and operation result (success / error code).
+- [ ] Confirm the existing trace/span structure in similar handlers, and use it as the reference — don't invent a new attribute naming convention without checking what's already there.
+- [ ] Any handler touching a new or high-risk code path must add structured span attributes (not just a log line) so it's queryable in production.
+
 ## Exit criteria
 
-- All five artefacts exist, are written to disk, and have been spot-checked by you (not trusted
+- All six artefacts exist, are written to disk, and have been spot-checked by you (not trusted
   from a sub-agent — verify the load-bearing claims yourself).
 - Every "generic" component has a build-on / decouple / build-new decision backed by coupling
   evidence.
 - Every assumption is verified, or its risk is explicitly accepted by the human.
 - The canonical glossary + rename inventory are decided, and the breaking-change ledger is enumerated
   with an accept/bridge decision per break.
+- Every new data field has an explicit filterability decision, and every new handler/job has an
+  observability plan.
 - The local CI mirror reproduces a known-green pipeline step.
 - No open question remains that would change the design.
 
 ## Human checkpoint
 
-Present all five — the dependency-coupling map, the assumptions register, the environmental/CI
-pre-mortem, the glossary + rename inventory, and the breaking-change ledger — together with the
-recommendations and accepted risks. **Stop for explicit sign-off.** Do not write
-code until you have it. If discovery surfaces something that changes the design — a "generic"
+Present all six — the dependency-coupling map, the assumptions register, the environmental/CI
+pre-mortem, the glossary + rename inventory, the breaking-change ledger, and the filterability +
+observability design — together with the recommendations and accepted risks. **Stop for explicit
+sign-off.** Do not write code until you have it. If discovery surfaces something that changes the design — a "generic"
 component that must be decoupled, an assumption proven false, an environmental constraint that
 reshapes the approach — **loop back to design**, do not push through. Re-entering the gate after a
 design change is cheaper than unwinding committed code.
