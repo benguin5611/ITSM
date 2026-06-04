@@ -30,6 +30,7 @@ Reusable Claude skills — drop-in compatible with any Anthropic-skills-aware ru
 - **[business-case](LLM-skills/business-case/)** — structured business case and vendor decision workflow
 - **[custom-json-schema](LLM-skills/custom-json-schema/)** — build and audit JSON schemas with pluggable domain documentation
 - **[clauding-with-code](LLM-skills/clauding-with-code/)** — phased build orchestrator for shipping a feature end to end with an AI coding agent, project-agnostic
+- **[meta-review](LLM-skills/meta-review/)** — orchestrates multiple review lenses against the real code into one human-in-the-loop verdict, with a deterministic dead-code emitter census
 
 ## Licence
 

@@ -42,6 +42,10 @@ Build, edit, and audit JSON schemas in any format. Domain knowledge is plugged i
 
 Build orchestrator for shipping a feature or service with an AI coding agent, end to end. Drives the lifecycle in phases — a blocking discovery gate, a single authoritative spec, a small-step build loop, a delegated multi-lens review, a git-proven PR split, and end-of-run archival — pausing for the human at every real fork. Project-agnostic: the concrete stack, CI pipeline, and local replica are bound in one quarantine file (`references/project-binding.md`) you fill in for your own project.
 
+### [meta-review/](meta-review/)
+
+The connective layer above the individual review skills. It doesn't re-implement reviewing — it grounds, sequences, composes, de-duplicates, and arbitrates multiple lenses (adversarial, security, simplification, dead-code, grudge passes) against the real code into one human-in-the-loop verdict, evolving a versioned artefact across passes. Includes a deterministic emitter-census pre-pass that catches API-surface dead code (`oneof` variants / `enum` values) the generic reachability tools miss. Project-agnostic via a `references/project-binding.md` quarantine file.
+
 ## Using these skills
 
 The exact loading mechanism depends on your runtime:
