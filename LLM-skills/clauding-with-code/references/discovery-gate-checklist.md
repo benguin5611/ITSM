@@ -102,6 +102,21 @@ consumer. Inventory the contract before touching a schema.
       affects, the fix/mitigation) and decide consciously per break: **accept** (no live consumers,
       pre-warn) or **bridge** (keep the old surface alive alongside the new). Record it in the spec.
 
+## 6. Filterability & observability design
+
+Two design properties that are expensive to retrofit — decide them before the schema or handler shape is fixed.
+
+**Filterability:**
+- [ ] For every new data field or entity attribute: will users need to filter by this value in the platform? State the decision explicitly — do not leave it implicit.
+- [ ] Encrypted or PII fields are **non-filterable by design** (the platform cannot filter on ciphertext). If a field is both sensitive and needs to be filterable, this is a design conflict that must be resolved at the gate — not after the migration.
+- [ ] Confirm the platform's filtering capability supports the data type and cardinality of each field marked filterable. High-cardinality free-text is rarely filterable well; structured enum-like values are. Decide the field type accordingly.
+- [ ] Record each filterability decision in the spec so the next developer knows it was deliberate.
+
+**Observability:**
+- [ ] For every new Connect handler or background job: what Honeycomb attributes will it emit? Plan this as a first-class design output. At minimum: tenant ID, primary entity being operated on, and operation result (success / error code).
+- [ ] Confirm the existing trace/span structure in similar handlers, and use it as the reference — don't invent a new attribute naming convention without checking what's already there.
+- [ ] Any handler touching a new or high-risk code path must add structured span attributes (not just a log line) so it's queryable in production.
+
 ## Exit criteria
 
 - All five artefacts exist, are written to disk, and have been spot-checked by you (not trusted

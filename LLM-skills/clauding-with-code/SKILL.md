@@ -102,7 +102,12 @@ fact that changes the design, loop back before building.
 Design the feature against the prime directives, then write **one comprehensive, self-contained
 specification** from the [`templates/SPEC.md`](templates/SPEC.md) template — the sceptical-engineer
 spec: what, how, why (with the trade-offs and the rejected alternatives), security posture,
-blast-radius, and a **mandatory testing guide**. Keep working notes discrete while you draft, but the
+blast-radius, a **mandatory testing guide**, a **filterability design decision** (for every new
+data field: will users need to filter by it in the platform? encrypted PII is non-filterable by
+design — decide this at design time, not after the schema is built), and an **observability plan**
+(for every new handler or background job: what Honeycomb attributes will it emit — at minimum tenant
+ID, primary entity, and operation result; plan instrumentation as a first-class design output, never
+an afterthought). Keep working notes discrete while you draft, but the
 *handed-over* spec is one document plus only minimal companions (an architecture diagram, the PR
 plan) — do not fragment the core spec across files the reader has to chase.
 
