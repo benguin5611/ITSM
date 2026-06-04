@@ -222,6 +222,15 @@ is the full catalogue. The headline ones:
   consumed" nor "safe to break." Diff the **committed** published contract base→branch as the oracle
   (a local regen drifts on codegen-plugin version skew); additive-only, with no newly-required field
   on an existing operation, is non-breaking.
+- **Premise-check every defensive measure — earned complexity vs reflexive noise.** Before adding a
+  guard, validation, proto `reserved`/`deprecated`, compat bridge, fallback, or abstraction, name the
+  *specific failure it prevents* and confirm that failure can actually occur **here**; one that guards
+  an impossible failure isn't safety — it's the over-engineering reviewers jeer at. Earned complexity
+  traces to a real requirement (kill-switch, tenancy isolation, audit trail, a real concurrency guard);
+  reflexive complexity traces to a *rule* applied without checking its premise holds. Branch-internal
+  churn that never shipped carries **no back-compat debt** — reserve/deprecate/bridge only at the
+  released boundary, and reserve a proto field only if it actually shipped (a never-released,
+  branch-only field is just deleted).
 - **Match the verification oracle to the artefact** — grep proves the weakest thing; a removal needs
   the compiler + a cross-repo sweep, a schema change needs the breaking-change linter, and so on. And
   verify the artefact itself, not the commit message — a commit can change a contract without saying so.
