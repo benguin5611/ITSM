@@ -105,12 +105,18 @@ async function security() {
 // The judgement-based finders (partitions) catch unreferenced funcs etc.; they MISS API-surface dead
 // code (proto oneof variants / enum values referenced only by generated marshalling — deadcode/staticcheck
 // report it "used"). So an exhaustive, deterministic EMITTER CENSUS always runs alongside them. See A12.
+// Census is split into two agents to avoid a single context window doing both exhaustive
+// enumeration (file-read heavy) and exhaustive grepping (tool-call heavy) — combining them
+// reliably blew the deadline on large repos. The enumerator is critical() (no point grepping
+// against an empty list); the grep step is bounded() (drops to null on timeout, collator notes it).
 async function apiSurfaceCensus() {
-  return bounded('deadcode:api-surface-census', () => agent(
-    'You run a DETERMINISTIC EMITTER CENSUS over the API surface under ' + REPO + ' (root strictly inside) — not a judgement call. This catches dead code the other finders structurally miss: a proto `oneof` variant or `enum` value is referenced by GENERATED marshalling, so `deadcode`/staticcheck report it "used" while NOTHING non-generated ever constructs it.\n'
-    + 'METHOD (be exhaustive, count — do not sample): (1) Enumerate EVERY proto `oneof` variant, EVERY `enum` value, and every audit/event-type constant in scope. (2) For each, grep for NON-generated (exclude generated-marshalling files), NON-test (exclude `_test`) emitters — the code that actually CONSTRUCTS/SETS it. (3) Report a count per identifier. ZERO non-generated emitters = DEAD CANDIDATE (even though it is public API / ships into the published contract). (4) Trigger hardest where the changeset MOVED a capability between paths — census the OLD path explicitly; orphaned-but-still-defined types are the classic leftover.\n'
-    + 'Output a table: identifier | file:line of definition | non-generated emitter count | DEAD CANDIDATE? | the exact grep you ran. Then a one-line tally. Include every zero-emitter item as a candidate; the adjudicator decides.',
-    { label: 'deadcode:api-surface-census', phase: 'Dead Code Sweep', agentType: 'Explore' }))()
+  const identifiers = await critical('deadcode:census-enumerate', DEADLINE_MS, () => agent(
+    'ENUMERATION ONLY — no grepping. Under ' + REPO + ' (root strictly inside), enumerate EVERY proto `oneof` variant, EVERY `enum` value, and every audit/event-type constant defined in the codebase. For each: identifier name | file:line of definition | type (oneof-variant / enum-value / audit-constant). Output ONLY a pipe-separated list — no analysis, no counts, no commentary. Include 100% of identifiers; never sample or summarise.',
+    { label: 'deadcode:census-enumerate', phase: 'Dead Code Sweep', agentType: 'Explore' }))
+  if (!identifiers) return null
+  return bounded('deadcode:census-grep', () => agent(
+    'EMITTER CENSUS — grep only, no new enumeration. The complete identifier list is below. For EACH identifier: (1) grep under ' + REPO + ' for NON-generated (exclude *.pb.go, *.gen.go, and any file whose path contains "gen/"), NON-test (exclude *_test.go) emitters — code that actually CONSTRUCTS or SETS the value; (2) record the count; (3) note the exact grep command you ran. ZERO non-generated emitters = DEAD CANDIDATE (even though it ships as public API). Trigger hardest where the changeset MOVED a capability between paths — census the old path explicitly. Output a table: identifier | file:line of definition | non-generated emitter count | DEAD CANDIDATE? | grep used. Then a one-line tally. Include every zero-emitter item; the adjudicator decides.\n\nIDENTIFIERS:\n' + identifiers,
+    { label: 'deadcode:census-grep', phase: 'Dead Code Sweep' }))()
 }
 async function deadCodeSweep() {
   const partitions = A.deadcodePartitions || []

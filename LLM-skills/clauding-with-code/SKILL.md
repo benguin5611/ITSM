@@ -59,6 +59,9 @@ This is an **active, human-in-the-loop** orchestrator. At every real fork — an
 a security trade-off, a scope cut, a "which of these is right" — stop and put the options to the
 human with a recommendation and its reasoning. Never silently pick among genuine alternatives. Emit a
 durable artefact at the end of each phase so progress is visible on disk and the run is resumable.
+In Claude Code, use **plan mode** (`EnterPlanMode`) to surface any design, build approach, or phase
+proposal at a checkpoint — the plan is presented before any work executes and requires explicit
+approval; call `ExitPlanMode` only on sign-off, or loop back and revise if the human amends.
 
 ## The lifecycle
 
