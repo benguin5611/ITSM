@@ -4,12 +4,12 @@ description: >
   Build orchestrator for shipping a feature or service with an AI coding agent, end to end and
   with discipline. It does not write the feature for you in one shot; it drives the lifecycle in
   phases — a blocking discovery gate, design and a single authoritative spec, a small-step build
-  loop, review (delegated to a dedicated multi-lens review pass), a git-proven PR split, and
+  loop, review (delegated to meta-code-review), a git-proven PR split, and
   end-of-run archival — pausing for the human at every real fork and emitting a durable artefact at
   each phase. Use whenever someone wants to "build this properly", "implement this feature end to
   end", start a greenfield service, "orchestrate building X", or turn a rough idea into shipped,
   reviewed, reviewable code without dropping work or cutting corners. NOT for a one-line edit (just
-  do it), NOT for pure review of existing code (use a dedicated review pass), NOT for answering
+  do it), NOT for pure review of existing code (use meta-code-review), NOT for answering
   questions about a codebase (just answer). When only one narrow lens is wanted — a security pass,
   an adversarial
   critique, doc polish — go straight to that skill instead of running the whole lifecycle.
@@ -25,8 +25,8 @@ for the human at every real fork. You **propose; the human disposes.** Delegate 
 
 ## Philosophy — guardian and guide
 
-Claude should be a **guardian and a guide**, not just an implementer. The **guardian** is the review
-side — a dedicated multi-lens review pass that protects the work, grounding and arbitrating every lens
+Claude should be a **guardian and a guide**, not just an implementer. Two sibling skills embody this:
+**`meta-code-review` is the guardian** — it protects the work, grounding and arbitrating every review lens
 before anything ships; **this skill is the guide** — it leads a human through building something
 properly, fork by fork, never taking the wheel.
 
@@ -129,7 +129,9 @@ tools have a blind spot of their own: for **API-surface symbols** (proto oneof v
 audit-event constants) the *generated* marshalling references them, so a reachability pass like
 `deadcode` reports them live even when nothing emits them — there, run an **emitter census**
 (enumerate each variant/value/constant, count its *non-generated* constructors; **zero emitters =
-dead**, regardless of generated references). Mind toolchain lag: a pinned/older unused-symbol linter
+dead**, regardless of generated references). The meta-code-review dead-code swarm runs exactly this
+census (its anti-pattern A12) — delegate to it rather than trust a reachability pass alone. Mind
+toolchain lag: a pinned/older unused-symbol linter
 can panic on a newer language toolchain (e.g. `staticcheck@latest` on Go 1.26) — that's an
 environment limit, not a code finding; switch to the analyser that tracks the toolchain rather than
 chasing the panic. Never bypass commit hooks. Test in a **production-replica environment frequently** — tests run against your own
@@ -138,13 +140,12 @@ code in a bespoke local setup are self-referential; a prod replica surfaces the 
 
 **Checkpoint:** the human reviews progress at sensible increments; surface blockers immediately.
 
-### Phase 3 — Review (delegate to a dedicated multi-lens review pass)
+### Phase 3 — Review (delegate to meta-code-review)
 
-Do **not** re-implement reviewing. Hand the built work to a dedicated multi-lens review pass — a
-review orchestrator (if your toolkit has one) that composes the review lenses (`rainbow-team-review`,
-a security-audit skill / `owasp-top-10`, a simplification / dead-code pass), grounds them against the
-real code, de-duplicates, and arbitrates into one human-in-the-loop verdict. Feed its findings back
-into the build loop.
+Do **not** re-implement reviewing. Hand the built work to **`meta-code-review`**, which composes the
+review lenses (`rainbow-team-review`, a security-audit skill / `owasp-top-10`, a simplification /
+dead-code pass), grounds them against the real code, de-duplicates, and arbitrates into one
+human-in-the-loop verdict. Feed its findings back into the build loop.
 
 **Checkpoint:** the human accepts the review verdict (or directs another pass).
 
@@ -194,7 +195,7 @@ the headline rules every run obeys:
 
 | Need | Use | Not |
 |---|---|---|
-| Full multi-lens review of the built code | a dedicated multi-lens review pass (if your toolkit has one) | re-reviewing here |
+| Full multi-lens review of the built code | `meta-code-review` | re-reviewing here |
 | Adversarial stress-test of a plan/design | `rainbow-team-review` | inventing your own red-team |
 | Security audit / OWASP pass | a security-audit skill / `owasp-top-10` | a bespoke security checklist |
 | Make a doc read like a human wrote it | `write-like-a-human` | hand-editing AI tells |
@@ -254,7 +255,7 @@ A team wants to add **shared, link-based access to a record for an outside party
 - **Phase 2 (build):** small units — schema, then the public endpoints, then the session mint — each
   linted and run against a production-replica stack, committed only when green. A pre-auth panic and an
   access-control boot error surface *in the replica*, exactly as the gate predicted.
-- **Phase 3 (review):** the multi-lens review pass runs the lenses, finds a timing oracle and a
+- **Phase 3 (review):** `meta-code-review` runs the lenses, finds a timing oracle and a
   data-exposure gap; both fixed in the loop.
 - **Phase 4 (PR split):** the branch is carved into reviewable PRs, the partition proven exhaustive and
   disjoint against the frozen SHA, the final diff empty.

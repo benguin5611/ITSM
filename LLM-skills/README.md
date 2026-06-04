@@ -46,6 +46,32 @@ Build orchestrator for shipping a feature or service with an AI coding agent, en
 
 The connective layer above the individual review skills. It doesn't re-implement reviewing — it grounds, sequences, composes, de-duplicates, and arbitrates multiple lenses (adversarial, security, simplification, dead-code, grudge passes) against the real code into one human-in-the-loop verdict, evolving a versioned artefact across passes. Includes a deterministic emitter-census pre-pass that catches API-surface dead code (`oneof` variants / `enum` values) the generic reachability tools miss. Project-agnostic via a `references/project-binding.md` quarantine file.
 
+## How the skills relate
+
+Most skills here are standalone — drop one in and it works. Two are **orchestrators** that *compose* the others rather than re-implement them, so a few skills reference each other by name:
+
+- **`clauding-with-code`** (the *guide*) drives a build end to end and **delegates its review phase to `meta-code-review`**; it also reaches for `rainbow-team-review` (adversarial stress-test), `owasp-top-10` (security pass), and `write-like-a-human` (doc polish) as specialised lenses it never re-implements.
+- **`meta-code-review`** (the *guardian*) is itself a composer: it grounds and arbitrates `rainbow-team-review`, `owasp-top-10`, and a simplification / dead-code pass into one human-in-the-loop verdict. It pairs with `clauding-with-code` as guardian-to-guide.
+
+```
+          clauding-with-code  (guide)
+                   │  delegates its review phase to
+                   ▼
+            meta-code-review  (guardian)
+                   │  composes the review lenses
+        ┌──────────┼───────────────┐
+        ▼          ▼               ▼
+ rainbow-team-  owasp-top-10   simplification /
+    review       (security)    dead-code pass
+ (adversarial)
+
+clauding-with-code also draws directly on: rainbow-team-review · owasp-top-10 · write-like-a-human (doc polish)
+
+standalone (no cross-references): knowledge-matrix · help-centre-article · business-case · custom-json-schema
+```
+
+A referenced skill is a **preferred tool, not a hard dependency** — if it isn't installed, the orchestrator falls back to a generic pass and names the skill as the tool it would have reached for. The lens skills are equally usable on their own.
+
 ## Using these skills
 
 The exact loading mechanism depends on your runtime:
