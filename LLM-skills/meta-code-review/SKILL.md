@@ -1,19 +1,19 @@
 ---
-name: meta-review
+name: meta-code-review
 description: >
-  Meta-review orchestrator — the connective layer above the individual review skills. It does
+  Meta-code-review orchestrator — the connective layer above the individual review skills. It does
   not re-implement reviewing; it grounds, sequences, composes, verifies, synthesises, and
   arbitrates the existing lenses (rainbow-team-review, a stack-specific security-audit skill /
   owasp-top-10, /simplify, plus in-house dead-code-swarm + grudge passes) into one
   human-in-the-loop verdict, and evolves a versioned artefact (spec / test-suite / design)
   across passes. Use whenever someone asks to "do a full review", "comprehensive review",
-  "meta-review this", "review this against the code from every angle", "evolve this
+  "meta-code-review this", "review this against the code from every angle", "evolve this
   spec/feature with a full review", or wants multiple review lenses composed, grounded against
   the real code, de-duplicated, and arbitrated rather than run in isolation. When only ONE lens
   is wanted, go straight to that skill instead.
 ---
 
-# meta-review
+# meta-code-review
 
 You are the **orchestrator**, not a reviewer. Your job is the connective tissue: ground the work in the real code, sequence the right lenses, compose and de-duplicate their findings, verify every claim, arbitrate conflicts, and carry one decision record across passes — pausing for the human at every real fork. Delegate the actual reviewing to the skills below; never re-implement their content.
 
@@ -27,7 +27,7 @@ This skill is **project-agnostic**. Every concrete tool, command, path, and stac
 3. **Never weaken security or privacy** — flag weaknesses, never normalise them or recommend weakening a control; pin deliberate protections against "cleanup". *Tie-break with #2:* #2 governs DESCRIPTION (tell the truth about what the code does); #3 governs RECOMMENDATION (never recommend making it worse).
 4. **Verify, don't trust** — check every count, ID, claim, and sub-agent finding against ground truth before relaying or acting. (Sub-agents miscount, hallucinate symbols, and over-claim coverage — re-derive, don't relay.)
 5. **Discovery before building** — surface assumptions, map shared/generic-component coupling, model real constraints; **blocking human sign-off before any expensive fan-out**.
-6. **Compose, don't duplicate** — delegate reviewing to existing skills; meta-review is connective tissue only.
+6. **Compose, don't duplicate** — delegate reviewing to existing skills; meta-code-review is connective tissue only.
 7. **Simplicity without sacrificing function or security** — actively seek complexity reductions, but every reduction must be proven behaviour- AND control-preserving; unproven ⇒ rejected.
 
 **Engineering-evaluation precedence (the lens applied to every finding / proposed change):** (1) secure-by-design + privacy-by-design → (2) match existing codebase conventions → (3) no new tools/files/deps unless essential → (4) simplicity. The process directives above govern *orchestrator behaviour*; these four govern *accept/reject of findings*. "Does this match existing conventions?" (cite a precedent) and "too much polish" are standing rejection reasons.
@@ -36,7 +36,7 @@ This skill is **project-agnostic**. Every concrete tool, command, path, and stac
 
 ## NO SILENT HANG (load-bearing — see `references/anti-patterns.md`)
 Any orchestration step can stall. Mitigate at three levels, always:
-1. **In-script fail-fast** — in `scripts/meta-review.workflow.js`, `withDeadline()` bounds **every** fan-out `agent()` (timeout → reject → the `parallel`/`pipeline` barrier turns it into `null` → `.filter(Boolean)` and proceed); `critical()` bounds every **sequential single-point-of-failure** step (synthesis, code-map regen, judge) — deadline, retry once, then **abort LOUDLY with a resume hint**. An unbounded `await agent(...)` is a defect.
+1. **In-script fail-fast** — in `scripts/meta-code-review.workflow.js`, `withDeadline()` bounds **every** fan-out `agent()` (timeout → reject → the `parallel`/`pipeline` barrier turns it into `null` → `.filter(Boolean)` and proceed); `critical()` bounds every **sequential single-point-of-failure** step (synthesis, code-map regen, judge) — deadline, retry once, then **abort LOUDLY with a resume hint**. An unbounded `await agent(...)` is a defect.
 2. **Pre-armed watchdog** — the moment you launch a background workflow, arm a watcher for the expected output artefacts by a per-phase deadline (see launch step 5). It must distinguish *slow-but-alive* (agents still writing transcripts) from *genuinely idle/hung* — a bare output-file deadline gives false alarms on a long synthesis. Use a harness wake-up, not a long-lived bash loop (those get reaped).
 3. **Recover, don't restart** — a stall recovers via `Workflow({scriptPath, resumeFromRunId})` (cached agents replay; only the failed step re-runs). A **repeat** stall on the *same* step is deterministic — fix that step (bound it; split a one-shot synthesis into sectioned writes; or split an *overloaded* agent that bundles two heavy jobs — e.g. adversarial code-review + dead-code adjudication — into bounded parallel halves) before resuming again. Prefer splitting over merely lengthening the deadline: if the transcript shows the agent was working (events still growing), it is overloaded, not hung, and more time will not save 20 min of work in an 8-min box. Never resume blindly more than once.
 
@@ -52,22 +52,22 @@ Apply engineering-evaluation precedence **#3 (no new tool/agent unless essential
 
 - **Budget up front.** At the discovery gate, set and get sign-off on an agent + token budget, right-sized to the task. **Default target: a handful of agents, not dozens** — an order of magnitude cheaper than a sprawling many-agent run.
 - **Don't auto-fan-out per artefact.** Do NOT spin one agent per file / requirement / version — let alone an A+B (attacker/defender) pair per artefact. **Select** the high-signal subset, **batch** small inputs into one agent, and use a **single analyst per item** unless an adversarial split genuinely earns its place (a high-stakes, contested call).
-- **Heavy modes are explicit opt-in.** mine-everything, A/B-per-file, multi-vote / adversarial-verify, the full rainbow panel + the dead-code swarm (the bundled `scripts/meta-review.workflow.js`) run ONLY on an explicit "be comprehensive / thoroughly audit", after gate sign-off, with the cost shown.
+- **Heavy modes are explicit opt-in.** mine-everything, A/B-per-file, multi-vote / adversarial-verify, the full rainbow panel + the dead-code swarm (the bundled `scripts/meta-code-review.workflow.js`) run ONLY on an explicit "be comprehensive / thoroughly audit", after gate sign-off, with the cost shown.
 - **The tension — named so it is not misread:** *"mine the whole journey, not just the latest"* is about WHAT you read for input completeness (all versions, the failure trail) — **not** how many agents you spawn. Get completeness via **selection + batching** (many artefacts → few agents), never one-agent-per-artefact. Reading breadth ≠ agent count.
 
 ## When to use / when not
 **Use** when a plan, spec, feature, or test-suite needs MULTIPLE lenses composed, grounded against the real code, de-duplicated, arbitrated, and carried across versions with a human in the loop.
-**Don't use** for a single lens — go straight to a stack-specific security-audit skill (whole-codebase security), `owasp-top-10` (changed-files security), `rainbow-team-review` (adversarial), or `/simplify` (complexity). meta-review is for when you want them *composed and arbitrated*.
+**Don't use** for a single lens — go straight to a stack-specific security-audit skill (whole-codebase security), `owasp-top-10` (changed-files security), `rainbow-team-review` (adversarial), or `/simplify` (complexity). meta-code-review is for when you want them *composed and arbitrated*.
 
 ## Method (interactive by default; heavy passes are opt-in)
 1. **Frame & decision-record.** State the artefact under review, the goal, and load/continue the one canonical decision record (`references/decision-record-template.md`). Prime it with prior decisions so nothing settled is re-litigated.
 2. **Ground (CODE-WINS).** Regenerate a fresh code map at the *last responsible moment* per `references/code-grounding-method.md`; personally spot-check the load-bearing claims before trusting it. Record the exact commit; if the branch is moving, say so.
 3. **Discovery gate — BLOCKING.** Surface assumptions, map shared/"generic" component coupling, model constraints, and **stop for explicit human sign-off** before any expensive fan-out. **Set and get sign-off on an agent + token BUDGET** (right-sized; lean by default — see Orchestration economy), not merely an estimate. Not advisory.
-4. **Compose the lenses.** Pick per scope using `references/composition-map.md`. **Lean by default** (Orchestration economy): select the high-signal subset of lenses/inputs, batch small inputs into one agent, one analyst per item — invoke each sub-skill via the Skill tool, pausing at the human gates. The bundled `scripts/meta-review.workflow.js`'s full fan-out (security CWE families, dead-code swarm, grudge adjudication) is the **comprehensive OPT-IN mode** — only on an explicit "be comprehensive", after gate sign-off, with the cost shown. The dead-code swarm always runs a **deterministic API-surface emitter census** (proto oneof variants / enum values with zero non-generated emitters — the dead code `deadcode`/staticcheck structurally miss; see `references/anti-patterns.md` A12) alongside the judgement-based finders.
+4. **Compose the lenses.** Pick per scope using `references/composition-map.md`. **Lean by default** (Orchestration economy): select the high-signal subset of lenses/inputs, batch small inputs into one agent, one analyst per item — invoke each sub-skill via the Skill tool, pausing at the human gates. The bundled `scripts/meta-code-review.workflow.js`'s full fan-out (security CWE families, dead-code swarm, grudge adjudication) is the **comprehensive OPT-IN mode** — only on an explicit "be comprehensive", after gate sign-off, with the cost shown. The dead-code swarm always runs a **deterministic API-surface emitter census** (proto oneof variants / enum values with zero non-generated emitters — the dead code `deadcode`/staticcheck structurally miss; see `references/anti-patterns.md` A12) alongside the judgement-based finders.
 5. **Launch + watchdog (if running the workflow).** Confirm the code-map commit is still current, fire the workflow, then **immediately arm the artefact/deadline watchdog** (NO SILENT HANG, level 2). On a loud `FAIL-FAST`, check whether the work was actually done (a guarded step can trip on a slow *return* after the output was already written) before re-running.
 6. **Verify & synthesise (draft).** Re-derive every count and load-bearing claim against ground truth (directive 4). Assemble the *draft* versioned artefact via `references/changeset-and-coverage-map-template.md` AND the **single consolidated findings ledger** (`references/coverage-and-findings.md`) so outstanding work is a one-line filter.
 7. **Final test-requirement ROI pass — MANDATORY** (`references/coverage-and-findings.md` §0). Before the artefact is final, walk **every** proposed test requirement through two gates and record a keep/cut/appendix verdict per row: **(A) does the feature exist?** — grep the code at the grounded HEAD; if the primitive is unbuilt (`proposed` rate-limiter, classification step-up, planned endpoint, decided-against behaviour), **DISCARD** → the "Future (build-gated)" appendix, or fold it into the task that builds the feature so the test ships with the code; **(B) is the ROI worth it?** — **cut** restatement, cross-layer duplicates, framework/generated-code tests, and cosmetics; **keep** behavioural + security-property coverage. EARS rows are usually *directionally correct yet still not worth writing* — this pass exists precisely to discard those. **Report the prune count** (evaluated N → discarded D: no-feature E / low-ROI F → kept K) with a one-line reason for any non-obvious cut, and carry only the survivors into the final artefact (bullets **==** coverage rows, no duplicate IDs, recomputed counts, no open-questions section).
 8. **Resolve open items WITH the human, then finalise.** The synthesis returns open items *separately* (never in the doc). Put each to the human (recommended option first), bake the answers in as definitive requirements, record them as resolved decisions, and write/update the decision-record addendum so the next pass is primed.
 
 ## Outputs
-Versioned artefact + changeset + a requirements-coverage map + a decision-record addendum, written to the working output location (the human chooses; see `references/project-binding.md`). Skill/spec/review output only — meta-review does not write or run product code. Never `git push`/publish without explicit permission.
+Versioned artefact + changeset + a requirements-coverage map + a decision-record addendum, written to the working output location (the human chooses; see `references/project-binding.md`). Skill/spec/review output only — meta-code-review does not write or run product code. Never `git push`/publish without explicit permission.

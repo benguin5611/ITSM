@@ -1,11 +1,11 @@
-# meta-review — process anti-patterns → pre-build checks
+# meta-code-review — process anti-patterns → pre-build checks
 
-Methodology lessons distilled from running real grounded meta-reviews. Each is a failure mode plus the check that prevents it. (Process only — no project specifics.)
+Methodology lessons distilled from running real grounded meta-code-reviews. Each is a failure mode plus the check that prevents it. (Process only — no project specifics.)
 
 ## A1. Silent hang on a single-point-of-failure step (LOAD-BEARING)
 **Failure:** a sequential agent with no deadline (typically the final synthesis or a judge) stalls; the run dies with no completion signal and no output, and only a human happening to look notices. Blindly resuming re-runs the same unguarded step and hangs again.
 **Worked anti-pattern:** a synthesis step once hung repeatedly; each resume re-wedged the same step. It was only contained once the step was deadline-bounded — at which point the failure became a *loud* abort, and it emerged the work had actually completed (the guard had tripped on a slow *return* after the output was already written).
-**Worked anti-pattern (the OVERLOADED agent):** a single `grudge` agent doing a deep adversarial code review *and* adjudicating a large dead-code candidate list blew its 8-min deadline **twice** — but the transcript showed it was *genuinely working* (mid-read, events still growing), not hung. It was simply ~15–20 min of work crammed into one bounded step. Lengthening the deadline treats the symptom; the fix was to **split it into two bounded halves (`grudge-code-review` + `deadcode-adjudicate`) run in parallel** — each lighter, overlapping in wall-clock — then resume from cache so only the two halves + synthesis re-ran. (The bundled `scripts/meta-review.workflow.js` `grudge()` was refactored to this split form for the same reason.)
+**Worked anti-pattern (the OVERLOADED agent):** a single `grudge` agent doing a deep adversarial code review *and* adjudicating a large dead-code candidate list blew its 8-min deadline **twice** — but the transcript showed it was *genuinely working* (mid-read, events still growing), not hung. It was simply ~15–20 min of work crammed into one bounded step. Lengthening the deadline treats the symptom; the fix was to **split it into two bounded halves (`grudge-code-review` + `deadcode-adjudicate`) run in parallel** — each lighter, overlapping in wall-clock — then resume from cache so only the two halves + synthesis re-ran. (The bundled `scripts/meta-code-review.workflow.js` `grudge()` was refactored to this split form for the same reason.)
 **Checks:** (1) every fan-out `agent()` is wrapped in `withDeadline()` (degrade-to-null in a barrier); (2) every sequential single-point-of-failure step is wrapped in `critical()` (deadline → retry once → loud abort with a resume hint); an unbounded `await agent(...)` is a defect. (3) On launch, pre-arm an artefact/deadline watchdog that distinguishes *slow-but-alive* (transcripts still being written) from *idle/hung*; use a harness wake-up, not a bash loop (loops get reaped). (4) On a **repeat** stall of the same step, stop resuming — **fix the step**: bound it; split a one-shot synthesis into sectioned writes; or split an *overloaded* agent that bundles two heavy jobs (e.g. code-review + dead-code adjudication) into **bounded parallel halves**. Prefer splitting over merely lengthening the deadline — more time cannot save a step doing 20 min of work, and parallel halves also cut wall-clock. Distinguish *overloaded-but-alive* (transcript still growing → split) from *truly idle* (no events → unbound/wedged). (5) On a loud `FAIL-FAST`, check whether the output was already produced before re-running.
 
 ## A2. Relaying a sub-agent's numbers without re-deriving them
@@ -29,8 +29,8 @@ Methodology lessons distilled from running real grounded meta-reviews. Each is a
 **Check:** apply the engineering-evaluation precedence — secure/privacy-by-design → match existing conventions → no new tools/deps → simplicity. "Does this match existing conventions?" (cite a precedent) and "too much polish" are valid rejections.
 
 ## A7. Duplicating the lenses instead of composing them
-**Failure:** meta-review re-implements what a sub-skill already does, so its content overlaps and drifts from the source skill.
-**Check:** delegate the actual reviewing to the existing skills via the Skill tool / the bundled workflow; meta-review only grounds, sequences, composes, verifies, arbitrates, and carries the record.
+**Failure:** meta-code-review re-implements what a sub-skill already does, so its content overlaps and drifts from the source skill.
+**Check:** delegate the actual reviewing to the existing skills via the Skill tool / the bundled workflow; meta-code-review only grounds, sequences, composes, verifies, arbitrates, and carries the record.
 
 ## A8. Expensive fan-out before discovery sign-off
 **Failure:** a large agent swarm runs before assumptions are surfaced and the human has approved scope and cost.

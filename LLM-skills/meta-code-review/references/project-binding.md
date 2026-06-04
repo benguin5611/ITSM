@@ -37,4 +37,4 @@ Leave this empty until the method runs on your project — then record one neutr
 
 ## Review delegation
 
-The composition layer delegates the actual reviewing to existing skills — `rainbow-team-review`, a stack-specific security-audit skill / `owasp-top-10`, a simplification / dead-code pass — grounds them against the real code, and arbitrates into one human-in-the-loop verdict. Never re-implement reviewing here; meta-review is connective tissue only.
+The composition layer delegates the actual reviewing to existing skills — `rainbow-team-review`, a stack-specific security-audit skill / `owasp-top-10`, a simplification / dead-code pass — grounds them against the real code, and arbitrates into one human-in-the-loop verdict. Never re-implement reviewing here; meta-code-review is connective tissue only.

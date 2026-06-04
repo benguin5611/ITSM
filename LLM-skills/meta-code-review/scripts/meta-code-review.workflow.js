@@ -1,4 +1,4 @@
-// meta-review — generalised heavy-pass orchestrator (opt-in, after the discovery gate is signed off).
+// meta-code-review — generalised heavy-pass orchestrator (opt-in, after the discovery gate is signed off).
 // Runs the expensive review lenses (security sweep, dead-code swarm, grudge adjudication) and a final
 // synthesis, then writes a versioned artefact + changeset. Default review is INTERACTIVE (SKILL.md);
 // this script is only for the heavy fan-out, and only on explicit opt-in with a cost estimate shown.
@@ -7,7 +7,7 @@
 // targeting a handful of agents (an order of magnitude cheaper than a sprawling many-agent run). Even here,
 // prefer batching inputs into a finder over one-agent-per-artefact; "mine the whole journey" governs what you READ, not agent count.
 //
-// Launch: Workflow({ scriptPath: ".../meta-review/scripts/meta-review.workflow.js", args: { ...config } })
+// Launch: Workflow({ scriptPath: ".../meta-code-review/scripts/meta-code-review.workflow.js", args: { ...config } })
 // Recover a stall: Workflow({ scriptPath, resumeFromRunId }) — cached agents replay; only the failed step re-runs.
 //
 // args (all optional; supply what the pass needs):
@@ -21,8 +21,8 @@
 //   focus      one-line "priority surface" string folded into every prompt
 
 export const meta = {
-  name: 'meta-review-heavy',
-  description: 'meta-review heavy passes: grounded security sweep + dead-code swarm + grudge adjudication + guarded synthesis of a versioned artefact',
+  name: 'meta-code-review-heavy',
+  description: 'meta-code-review heavy passes: grounded security sweep + dead-code swarm + grudge adjudication + guarded synthesis of a versioned artefact',
   phases: [
     { title: 'Security Inventory' },
     { title: 'Security Sweep' },
@@ -71,7 +71,7 @@ const PRIORS = [].concat(A.priors || []).join(', ')
 const SECREFS = A.secRefs || ''
 const FOCUS = A.focus ? ('\n\nPRIORITY SURFACE: ' + A.focus) : ''
 const GROUND = [
-  'You are a sub-agent in a grounded meta-review. CODE WINS: the running code under ' + REPO + ' is the source of truth; the artefact lags it. Describe what IS; never fabricate; cite file:line.',
+  'You are a sub-agent in a grounded meta-code-review. CODE WINS: the running code under ' + REPO + ' is the source of truth; the artefact lags it. Describe what IS; never fabricate; cite file:line.',
   'Artefact under review: ' + ARTEFACT,
   'Ground-truth code map (spot-checked): ' + CODEMAP,
   PRIORS ? ('Prior decisions — settled, do not re-litigate: ' + PRIORS) : '',
