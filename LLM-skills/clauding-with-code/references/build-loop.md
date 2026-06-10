@@ -4,7 +4,17 @@ Build discipline for the implementation phase. Code is shipped in **small, verif
 run through the same tight loop. The loop is not bureaucracy — it serves the prime directives:
 linting and static analysis enforce **secure-by-design** and **match-conventions** for free, every
 iteration, without you having to remember to. Concrete toolchain, commands, and versions →
-[`project-binding.md`](project-binding.md).
+[`bndry.md`](bndry.md).
+
+## Before you write: three parallel tracks
+
+Run these three checks before starting each unit — they take seconds and prevent the most common pre-commit mistakes:
+
+- **Correctness** — is your planned approach solving the right problem in the right place?
+- **Existing alternatives** — does this already exist somewhere in the repo? (directive #3: minimise additions)
+- **Pattern/theme consistency** — what's the established pattern here? (directive #2: match conventions)
+
+A quick targeted read or grep is enough. Skipping them is how you build the correct solution to the wrong problem, reinvent an existing utility, or write code that reads as foreign in the codebase.
 
 ## The loop (every unit, no exceptions)
 

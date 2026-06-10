@@ -35,7 +35,7 @@ the human stays the decision-maker and the code is the medium, not the master. E
 that stance made concrete: propose don't dispose, gate before you build, pause at every real fork.
 
 This skill is **project-agnostic**. Every concrete tool, command, path, and stack detail lives in
-[`references/project-binding.md`](references/project-binding.md) — read it once at the start of a real run to bind the
+[`references/bndry.md`](references/bndry.md) — read it once at the start of a real run to bind the
 generic method to the actual project, and quarantine anything project-specific there, never here.
 
 ## Prime directives (strict precedence — lower number wins on conflict)
@@ -121,7 +121,7 @@ commits, and PRs to the tracker; this step just gives the work its shape on the 
 
 ### Phase 2 — Build loop
 
-Build in small, verifiable units. Every loop:
+Build in small, verifiable units. Before writing each unit, run three parallel checks: **correctness** (right approach, right place?), **existing alternatives** (does this already exist in the repo?), and **pattern/theme consistency** (established convention here?). Then every loop:
 
 > **small unit → lint → local CI-mirror (production-replica, fail-fast) → commit → push only when green**
 
@@ -290,6 +290,6 @@ A team wants to add **shared, link-based access to a record for an outside party
 - The spec and its minimal companions live in the project's documentation/working area (the human
   chooses; default to the repo's docs location or a clearly-named working folder).
 - Match the repo's existing conventions for everything (directive #2). Bind the generics to this
-  project via [`references/project-binding.md`](references/project-binding.md).
+  project via [`references/bndry.md`](references/bndry.md).
 - Australian English in everything produced.
 - **Never** push to a remote until the human explicitly says so.
