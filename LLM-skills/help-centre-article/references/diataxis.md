@@ -67,28 +67,28 @@ Pick exactly one. The type tag is separate from the article's label topics, whic
 Quadrants stay distinct inside an article, but they should link to each other generously. Three patterns cover almost every case.
 
 - **Before you start** — appears near the top of a how-to or tutorial. Links sideways to the reference or explanation articles the reader needs to make sense of what they're about to do. For a how-to on changing a billing date, *Before you start* points at the reference for billing fields and at the explanation for how billing periods work.
-- **See also** — appears at the foot of tutorials, how-tos, references, and general Explanation articles (but **not** Concept articles, which have a closed four-section shape). Links sideways to the same-topic articles in other quadrants. A reference on permission roles links to the how-to for adding a team member and to the explanation of the product's role model.
+- **See also** — appears at the foot of tutorials, how-tos, references, and general Explanation articles (but **not** Explanation articles, which have a closed four-section shape). Links sideways to the same-topic articles in other quadrants. A reference on permission roles links to the how-to for adding a team member and to the explanation of the product's role model.
 - **Next steps** — appears only at the foot of a tutorial. Points forwards to the next thing the reader should learn or the how-to articles they'll need now that they have the skill. A getting-started tutorial closes with "Next steps" links to the how-to articles for running subsequent tasks and for handling common follow-on cases.
 
 Reference articles rarely need *Next steps* — readers don't visit a reference to be taken somewhere else. Explanation articles rarely need *Before you start* — there's nothing to start. How-tos almost always benefit from both *Before you start* and *See also*. Tutorials almost always benefit from both *Before you start* and *Next steps*.
 
-## Concept articles — a specialisation of Explanation
+## Explanation articles — a specialisation of Explanation
 
-Within Explanation, help centres often have a recurring shape called a **Concept article** — a short, Explanation-mode page about a single named thing in the product (e.g. Projects, Workspaces, Tags, Roles). Concept articles are the spine of the help centre: how-tos link back to the relevant Concept(s) so readers can ground themselves before acting on the thing.
+Within Explanation, help centres often have a recurring shape called an **Explanation article** — a short, Explanation-mode page about a single named thing in the product (e.g. Projects, Workspaces, Tags, Roles). Explanation articles are the spine of the help centre: how-tos link back to the relevant Explanation article(s) so readers can ground themselves before acting on the thing.
 
-A term earns a Concept article when both are true:
+A term earns an Explanation article when both are true:
 
 1. It is a **product** thing — a named object, surface, or feature the product exposes, not industry vocabulary.
 2. It is best served by Explanation treatment — one Glossary line isn't enough; it benefits from background, "why it exists", and how it relates to other things.
 
-That test cleanly separates Concept articles from Glossary entries.
+That test cleanly separates Explanation articles from Glossary entries.
 
-- Product surfaces with semantics worth explaining (e.g. *Projects*, *Workspaces*, *Roles*, *Tags*, *Notifications*) → **Concept article** (plus a one-line Glossary entry pointing at it, so the Glossary stays the single search surface for "what does X mean in this product").
-- Industry or domain terms the product is **about** but does not own → **Glossary entry only**, cross-linked to the Concept article(s) that implement them in the product.
+- Product surfaces with semantics worth explaining (e.g. *Projects*, *Workspaces*, *Roles*, *Tags*, *Notifications*) → **Explanation article** (plus a one-line Glossary entry pointing at it, so the Glossary stays the single search surface for "what does X mean in this product").
+- Industry or domain terms the product is **about** but does not own → **Glossary entry only**, cross-linked to the Explanation article(s) that implement them in the product.
 
-A product help centre explains what the product does, not the industry the product operates in. Industry vocabulary lives in the Glossary as cross-references; it never gets a Concept article of its own. The line "is this a product thing in *this* product?" is the test that holds the boundary.
+A product help centre explains what the product does, not the industry the product operates in. Industry vocabulary lives in the Glossary as cross-references; it never gets an Explanation article of its own. The line "is this a product thing in *this* product?" is the test that holds the boundary.
 
-The per-article structure for a Concept article lives in [templates/explanation.md](../templates/explanation.md) alongside the General Explanation shape — same file, with a decision rule at the top so the author picks the right one. Concept pages are reference-adjacent and need a working model delivered in under five minutes; they are tighter and more scaffolded than the General Explanation shape. Concept articles have a **closed four-section shape** — *What it is* / *Why it exists* / *Key properties* / *How it relates* — and nothing follows *How it relates*. No trailing link list, no closing sub-section. How-tos and reference articles that act on the Concept link *to* this article, not the other way round, so a Concept page never maintains outbound link lists.
+The per-article structure for an Explanation article lives in [templates/explanation.md](../templates/explanation.md) alongside the General Explanation shape — same file, with a decision rule at the top so the author picks the right one. Explanation articles are reference-adjacent and need a working model delivered in under five minutes; they are tighter and more scaffolded than the General Explanation shape. Explanation articles have a **closed four-section shape** — *What it is* / *Why it exists* / *Key properties* / *How it relates* — and nothing follows *How it relates*. No trailing link list, no closing sub-section. How-tos and reference articles that act on the Explanation article link *to* this article, not the other way round, so an Explanation article never maintains outbound link lists.
 
 ## Troubleshooting articles — a how-to variant
 

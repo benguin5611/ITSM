@@ -5,23 +5,23 @@
 Explanation has **two distinct shapes** in a typical help centre, and both live in this template:
 
 - **General Explanation** — discursive prose about a model, reasoning, or tradeoffs that span multiple things ("Understanding how billing periods work", "Why we separate roles from permissions", "How users, teams, and projects fit together").
-- **Concept article** — a tighter, scaffolded specialisation about **one named product object** (Workspaces, Projects, Roles, Tags, Notifications, etc.).
+- **Explanation article** — a tighter, scaffolded specialisation about **one named product object** (Workspaces, Projects, Roles, Tags, Notifications, etc.).
 
 Pick the shape using the decision rule below, then follow the section for that shape. Both carry the same Diátaxis tag (`explanation`) — the shape difference is structural, not classificatory.
 
 ---
 
-## Decision: Explanation or Concept?
+## Decision: General Explanation or Explanation article?
 
-**Use Concept** when the article is about a **single named product object** — a primitive the product exposes by name. If the article title would be "Workspaces" or "Tags" (the name of one thing) and a reader arrives wanting "what is X in this product?", it's a Concept article. Use the tighter four-section scaffold (What it is / Why it exists / Key properties / How it relates).
+**Use Explanation article** when the article is about a **single named product object** — a primitive the product exposes by name. If the article title would be "Workspaces" or "Tags" (the name of one thing) and a reader arrives wanting "what is X in this product?", it's an Explanation article. Use the tighter four-section scaffold (What it is / Why it exists / Key properties / How it relates).
 
 **Use General Explanation** when the article is about a **model, process, or cross-cutting reasoning** — a *system* or *philosophy* rather than one named object. If the article title would be "Understanding X", "Why we Y", or "How A and B fit together", it's General Explanation. Use the discursive prose shape with section headings that name questions.
 
-**Test by article title.** A title that names one thing ("Workspaces", "Notifications") → Concept. A title that frames a question or process ("Understanding billing periods", "Why we separate roles from permissions") → General Explanation.
+**Test by article title.** A title that names one thing ("Workspaces", "Notifications") → Explanation article. A title that frames a question or process ("Understanding billing periods", "Why we separate roles from permissions") → General Explanation.
 
-**Test by subject coverage.** Explains *what one named product object is* → Concept. Explains *the reasoning that connects several objects or the model behind them* → General Explanation. An article called *Notifications* is a Concept (the thing); an article called *Understanding how notifications are scheduled* is General Explanation (the reasoning).
+**Test by subject coverage.** Explains *what one named product object is* → Explanation article. Explains *the reasoning that connects several objects or the model behind them* → General Explanation. An article called *Notifications* is an Explanation article (the thing); an article called *Understanding how notifications are scheduled* is General Explanation (the reasoning).
 
-**Edge cases.** An article that starts as a Concept ("Notifications") but spends most of its body on the *why* behind scheduling is mis-shaped — extract the why into a sibling General Explanation article ("Understanding how notifications are scheduled") and leave the Concept page with the tight scaffold. The converse — a General Explanation that ends up describing one object — should usually be re-titled and re-shaped as a Concept.
+**Edge cases.** An article that starts as an Explanation article ("Notifications") but spends most of its body on the *why* behind scheduling is mis-shaped — extract the why into a sibling General Explanation article ("Understanding how notifications are scheduled") and leave the Explanation article with the tight scaffold. The converse — a General Explanation that ends up describing one object — should usually be re-titled and re-shaped as an Explanation article.
 
 If the article would naturally lead the reader into action steps, split either way: keep the *why* or *what is* here, and link to the [how-to](how-to.md) that carries the steps.
 
@@ -77,28 +77,28 @@ If the article would naturally lead the reader into action steps, split either w
 
 ---
 
-## Concept articles (specialisation of Explanation)
+## Explanation articles (specialisation of Explanation)
 
-**When to use:** the reader has encountered a product-specific term — in the UI, in another help article, or in the Glossary — and needs to understand what it is, why it exists, and how it fits with the rest of the product. Concept articles are the spine of the help centre: how-tos link back to the relevant Concept(s) so readers can ground themselves before acting on the thing.
+**When to use:** the reader has encountered a product-specific term — in the UI, in another help article, or in the Glossary — and needs to understand what it is, why it exists, and how it fits with the rest of the product. Explanation articles are the spine of the help centre: how-tos link back to the relevant Explanation article(s) so readers can ground themselves before acting on the thing.
 
-**What earns a Concept article.** See [references/diataxis.md](../references/diataxis.md#concept-articles--a-specialisation-of-explanation) for the principle. In short: a term earns a Concept article when it is (a) a **product** thing in *this* product — not industry vocabulary — *and* (b) best served by Explanation treatment, where one Glossary line isn't enough. Industry or domain terms the product is *about* live in the Glossary only and cross-link to the Concept articles that implement them.
+**What earns an Explanation article.** See [references/diataxis.md](../references/diataxis.md#explanation-articles--a-specialisation-of-explanation) for the principle. In short: a term earns an Explanation article when it is (a) a **product** thing in *this* product — not industry vocabulary — *and* (b) best served by Explanation treatment, where one Glossary line isn't enough. Industry or domain terms the product is *about* live in the Glossary only and cross-link to the Explanation articles that implement them.
 
-**Voice and tone:** explanatory prose, tighter and more scaffolded than General Explanation. Concept pages are reference-adjacent — readers arrive looking up "what is X in this product" and should leave with a working model in under five minutes. Diátaxis allows Explanation to take a position; Concept articles inherit that licence but use it sparingly.
+**Voice and tone:** explanatory prose, tighter and more scaffolded than General Explanation. Explanation articles are reference-adjacent — readers arrive looking up "what is X in this product" and should leave with a working model in under five minutes. Diátaxis allows Explanation to take a position; Explanation articles inherit that licence but use it sparingly.
 
 **Structural elements:**
 
 1. **What it is** — one-paragraph definition. No preamble. Name the thing, state what it is, identify what part of the product it lives in.
-2. **Why it exists** — what problem it solves, or what operational reality made it necessary. This is the section that justifies a Concept article over a Glossary entry: if there's nothing interesting to say here, the term probably belongs in the Glossary instead.
+2. **Why it exists** — what problem it solves, or what operational reality made it necessary. This is the section that justifies an Explanation article over a Glossary entry: if there's nothing interesting to say here, the term probably belongs in the Glossary instead.
 3. **Key properties / sub-types** — the structure of the concept: its fields, its sub-types, the constraints that govern it, the way it relates to itself. Bullet lists or a small table are appropriate here. Structure, not steps.
-4. **How it relates** — links to neighbouring Concepts. Prose when the relationship has nuance worth a sentence; a list when it's straightforward.
+4. **How it relates** — links to neighbouring Explanation articles. Prose when the relationship has nuance worth a sentence; a list when it's straightforward.
 
-**That's the whole article.** A Concept page has exactly those four sections — nothing follows *How it relates*. No trailing link list, no closing sub-section, no further headings. Once you've named the neighbouring Concepts in *How it relates*, the article has done its job. How-tos and reference articles that act on the Concept link *to* this article, not the other way round, so a Concept page never needs to maintain outbound link lists. Keep it tight and reference-shaped.
+**That's the whole article.** An Explanation article has exactly those four sections — nothing follows *How it relates*. No trailing link list, no closing sub-section, no further headings. Once you've named the neighbouring Explanation articles in *How it relates*, the article has done its job. How-tos and reference articles that act on the Explanation article link *to* this article, not the other way round, so an Explanation article never needs to maintain outbound link lists. Keep it tight and reference-shaped.
 
 **What to avoid:**
 
-- **Steps.** If the article tells the reader how to do something, it's a how-to. Concept articles can mention the relevant how-tos by name ("the Tags concept is acted on by *How to tag an item*") but never carry the steps.
+- **Steps.** If the article tells the reader how to do something, it's a how-to. Explanation articles can mention the relevant how-tos by name ("the Tags Explanation article is acted on by *How to tag an item*") but never carry the steps.
 - **Exhaustive field-by-field listings.** A few key properties belong in section 3; a complete field reference belongs in a Reference article — link to it.
-- **Industry-definition prose.** A Concept article about a product feature explains the *feature*. It does not explain what the underlying industry term means generally — that belongs in the Glossary entry, which cross-links here.
+- **Industry-definition prose.** An Explanation article about a product feature explains the *feature*. It does not explain what the underlying industry term means generally — that belongs in the Glossary entry, which cross-links here.
 - **Tasks-disguised-as-prose.** "When you create a Workspace, the system also creates..." reads as a steps article in a tuxedo. Recast as static description: "A Workspace contains exactly one...". If the dynamic behaviour matters, it's a How-to or a Reference.
 
 ### Worked example — *Projects*
