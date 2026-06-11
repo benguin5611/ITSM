@@ -8,17 +8,24 @@
 // prefer batching inputs into a finder over one-agent-per-artefact; "mine the whole journey" governs what you READ, not agent count.
 //
 // Launch: Workflow({ scriptPath: ".../meta-code-review/scripts/meta-code-review.workflow.js", args: { ...config } })
-// Recover a stall: Workflow({ scriptPath, resumeFromRunId }) — cached agents replay; only the failed step re-runs.
+// Recover a stall: Workflow({ scriptPath, resumeFromRunId, args: { ...config } })
+//   NOTE: args must be re-passed on resume — they are not stored between runs.
 //
 // args (all optional; supply what the pass needs):
-//   artefact   path to the artefact under review (spec / test-suite / design)
-//   codemap    path to the freshly-regenerated, spot-checked code map (ground truth)
-//   repo       repo root the agents may read (root strictly inside it)
-//   outDir     output directory (default the artefact's dir)
-//   priors     path(s) to the decision record / prior-decisions to prime with
-//   secRefs    dir of security reference files (owasp/cwe/sinks/boundaries — see project-binding.md)
-//   deadcodePartitions  [{key, brief}] slices for the dead-code swarm
-//   focus      one-line "priority surface" string folded into every prompt
+//   artefact           path to the artefact under review (spec / test-suite / design)
+//   codemap            path to the freshly-regenerated, spot-checked code map (ground truth)
+//   repo               repo root the agents may read (root strictly inside it)
+//   outDir             output directory (default the artefact's dir)
+//   priors             path(s) to the decision record / prior-decisions to prime with
+//   secRefs            dir of security reference files (owasp/cwe/sinks/boundaries — see project-binding.md)
+//   domainOverlays     path(s) to domain overlay files (e.g. references/domain-backend.md) to include in every
+//                      agent's ground context; auto-detect domain at the discovery gate and pass the matching overlay(s)
+//   deadcodePartitions [{key, brief}] slices for the dead-code swarm
+//   grudgePartitions   [{key, brief}] scoped slices for the adversarial grudge pass; recommended for whole-repo
+//                      runs where a single agent cannot complete the review within one deadline (same shape as deadcodePartitions)
+//   focus              one-line "priority surface" string folded into every prompt
+//   deadlineMs         override per-agent fan-out deadline in ms (default 8 min)
+//   synthDeadlineMs    override synthesis/adjudication/grudge deadline in ms (default 12 min)
 
 export const meta = {
   name: 'meta-code-review-heavy',
@@ -38,6 +45,7 @@ export const meta = {
 // barrier proceeds. critical() bounds a sequential single-point-of-failure step, retries ONCE,
 // then aborts LOUDLY with a resume hint rather than hanging silently.
 const DEADLINE_MS = (args && args.deadlineMs) || 8 * 60 * 1000 // 8 min/attempt — generous; fails fast on a true hang
+const SYNTHESIS_DEADLINE_MS = (args && args.synthDeadlineMs) || 12 * 60 * 1000 // 12 min for synthesis/adjudication/grudge on larger inputs
 function withDeadline(p, ms, label) {
   if (typeof setTimeout !== 'function') return Promise.resolve(p) // sandbox without timers: degrade gracefully
   let t
@@ -55,7 +63,8 @@ async function critical(label, ms, mk) {
       if (attempt === 2) {
         throw new Error('FAIL-FAST: critical step "' + label + '" stalled/failed twice (' + ms + 'ms each). '
           + 'Root-cause the step before resuming again (bound it, or split a one-shot synthesis into sectioned '
-          + 'writes); recover via Workflow({scriptPath, resumeFromRunId}) — cached agents replay, only this step re-runs.')
+          + 'writes); recover via Workflow({scriptPath, resumeFromRunId, args: {...}}) — cached agents replay, only this step re-runs. '
+          + 'Remember to re-pass args on resume.')
       }
     }
   }
@@ -65,17 +74,21 @@ const bounded = (label, thunk) => () => withDeadline(thunk(), DEADLINE_MS, label
 
 // ---- config ----
 const A = args || {}
-if (!A.repo || !A.artefact) throw new Error('FAIL-FAST: required args (repo, artefact) not received. Pass them via the args parameter — if using scriptPath, args may not be injected; bake config in directly or pass script inline.')
+if (!A.repo || !A.artefact) throw new Error(
+  'FAIL-FAST: required args (repo, artefact) not received. Pass them via the args parameter. '
+  + 'On resume (Workflow({scriptPath, resumeFromRunId})), args must be re-passed alongside resumeFromRunId — they are not stored between runs.')
 const ARTEFACT = A.artefact, CODEMAP = A.codemap, REPO = A.repo
 const OUTDIR = A.outDir || (ARTEFACT ? ARTEFACT.replace(/\/[^/]*$/, '') : '.')
 const PRIORS = [].concat(A.priors || []).join(', ')
 const SECREFS = A.secRefs || ''
+const DOMAIN_OVERLAYS = [].concat(A.domainOverlays || [])
 const FOCUS = A.focus ? ('\n\nPRIORITY SURFACE: ' + A.focus) : ''
 const GROUND = [
   'You are a sub-agent in a grounded meta-code-review. CODE WINS: the running code under ' + REPO + ' is the source of truth; the artefact lags it. Describe what IS; never fabricate; cite file:line.',
   'Artefact under review: ' + ARTEFACT,
   'Ground-truth code map (spot-checked): ' + CODEMAP,
   PRIORS ? ('Prior decisions — settled, do not re-litigate: ' + PRIORS) : '',
+  DOMAIN_OVERLAYS.length ? ('Domain overlays — read and apply before reviewing: ' + DOMAIN_OVERLAYS.join(', ')) : '',
   'Root every read strictly inside ' + REPO + '.' + FOCUS,
 ].filter(Boolean).join('\n')
 
@@ -95,7 +108,7 @@ async function security() {
       + 'State where each lives and whether the artefact covers it. Output MISSING/WEAK requirements (EARS) with CWE id.\n\nINVENTORY:\n' + inventory,
       { label: 'sec-cwe', phase: 'Security Sweep' })),
   ])
-  const synthesis = await critical('sec-synthesis', DEADLINE_MS, () => agent(
+  const synthesis = await critical('sec-synthesis', SYNTHESIS_DEADLINE_MS, () => agent(
     GROUND + '\n\nYOUR ROLE: consolidate into one deduplicated, severity-sorted list of MISSING/WEAK requirements — stable id, EARS text, target section, layer, severity, source (OWASP/CWE), NEW vs STRENGTHEN. List spec-vs-code mismatches to correct under CODE-WINS. Write to ' + OUTDIR + '/security-findings.md and return it.\n\nOWASP:\n' + (owasp || '(dropped)') + '\n\nCWE:\n' + (cwe || '(dropped)'),
     { label: 'sec-synthesis', phase: 'Security Synthesis' }))
   return { inventory, owasp, cwe, synthesis }
@@ -128,23 +141,33 @@ async function deadCodeSweep() {
       preamble + '\n\nSLICE: ' + p.brief + '\n\nFor each candidate: identifier + file:line, why you suspect it is dead, and the reference-check you ran. Terse bullets; if clean, say "clean".',
       { label: 'deadcode:' + p.key, phase: 'Dead Code Sweep', agentType: 'Explore' }))),
   ])).filter(Boolean)
-  const list = finds
-  log('dead-code swarm: ' + list.length + '/' + (partitions.length + 1) + ' slices returned (incl. API-surface census)')
-  if (!list.length) return null
+  log('dead-code swarm: ' + finds.length + '/' + (partitions.length + 1) + ' slices returned (incl. API-surface census)')
+  if (!finds.length) return null
   return critical('deadcode-collate', DEADLINE_MS, () => agent(
-    'You are a mechanical COLLATOR — no verdicts. Merge + de-duplicate the candidate lists into one clean list grouped by area; keep each item file:line + suspicion + reference-check. Output the consolidated list only.\n\nLISTS:\n' + list.join('\n\n---\n\n'),
+    'You are a mechanical COLLATOR — no verdicts. Merge + de-duplicate the candidate lists into one clean list grouped by area; keep each item file:line + suspicion + reference-check. Output the consolidated list only.\n\nLISTS:\n' + finds.join('\n\n---\n\n'),
     { label: 'deadcode-collate', phase: 'Dead Code Sweep' }))
 }
 
 // ---- grudge: adversarial code review + dead-code adjudication ----
-// SPLIT into two bounded halves run in PARALLEL. Bundling both heavy jobs into ONE bounded agent
-// deterministically blows the deadline (a grudge mega-agent stalled at 8min x2 while genuinely working —
-// transcript mid-read, events still growing). Splitting (not just lengthening the deadline) is the
-// fix: each half is lighter and they overlap. See anti-patterns.md A1.
+// The code review supports optional grudgePartitions for whole-repo runs where a single agent cannot
+// complete the adversarial pass within one deadline (see A1 + A13). When partitions are supplied,
+// each slice runs in bounded parallel and a merge step consolidates them. When omitted, a single
+// critical() agent handles the whole scope (appropriate for targeted / scoped reviews).
 async function grudgeCodeReview() {
-  return agent(
-    GROUND + '\n\nYOUR ROLE — ADVERSARIAL CODE REVIEW (the AI-sceptic engineer). You distrust AI-generated code and want to find what is wrong with it. Be aggressive, specific, HONOURABLE (no fabrication; cite file:line + a concrete failure scenario) and TERRIFIED of a false positive (bring receipts: read the path end to end, quote the code, and actively try to REFUTE your own finding by checking upstream mitigations — validators, interceptors, row-level policies, locks, constraints, clamps — assert only what you failed to refute). Honour CODE-WINS and the priors. Pay particular attention to any comment whose stated behaviour, value or invariant no longer matches the code it sits on. You consider it failure to surface nothing at Medium+, but you MUST admit it honestly rather than manufacture. Output a "## Findings" section ordered by severity: file:line, the quoted code, the failure scenario, the receipts/refutation you ruled out, and confidence.',
-    { label: 'grudge-code-review', phase: 'Grudge Review' })
+  const partitions = A.grudgePartitions || []
+  const reviewPrompt = GROUND + '\n\nYOUR ROLE — ADVERSARIAL CODE REVIEW (the AI-sceptic engineer). You distrust AI-generated code and want to find what is wrong with it. Be aggressive, specific, HONOURABLE (no fabrication; cite file:line + a concrete failure scenario) and TERRIFIED of a false positive (bring receipts: read the path end to end, quote the code, and actively try to REFUTE your own finding by checking upstream mitigations — validators, interceptors, row-level policies, locks, constraints, clamps — assert only what you failed to refute). Honour CODE-WINS and the priors. Pay particular attention to any comment whose stated behaviour, value or invariant no longer matches the code it sits on. You consider it failure to surface nothing at Medium+, but you MUST admit it honestly rather than manufacture. Output a "## Findings" section ordered by severity: file:line, the quoted code, the failure scenario, the receipts/refutation you ruled out, and confidence.'
+  if (!partitions.length) {
+    return critical('grudge-code-review', SYNTHESIS_DEADLINE_MS, () => agent(
+      reviewPrompt, { label: 'grudge-code-review', phase: 'Grudge Review' }))
+  }
+  const slices = (await parallel(partitions.map(p => bounded('grudge:' + p.key, () => agent(
+    reviewPrompt + '\n\nSCOPE FOR THIS SLICE (stay within it): ' + p.brief,
+    { label: 'grudge:' + p.key, phase: 'Grudge Review' }))))).filter(Boolean)
+  log('grudge: ' + slices.length + '/' + partitions.length + ' slices returned')
+  if (!slices.length) return null
+  return critical('grudge-merge', SYNTHESIS_DEADLINE_MS, () => agent(
+    'MERGE ONLY — combine the adversarial review slices below into one deduplicated "## Findings" section ordered by severity. Make no new findings; cite file:line from the originals.\n\n' + slices.join('\n\n---\n\n'),
+    { label: 'grudge-merge', phase: 'Grudge Review' }))
 }
 
 async function deadcodeAdjudicate(deadCandidates) {
@@ -154,10 +177,21 @@ async function deadcodeAdjudicate(deadCandidates) {
 }
 
 // ---- run ----
-const [sec, deadCandidates] = await parallel([bounded('security', () => security()), bounded('deadCodeSweep', () => deadCodeSweep())])
+// Phase functions (security, deadCodeSweep, grudgeCodeReview) manage their own internal bounding via
+// critical() and bounded(). The outer run block uses .catch() only — wrapping a phase function in a
+// second bounded() call starts an outer timer that fires before the inner steps complete, discarding
+// all completed work (A13). Leaf agent() calls in a fan-out use bounded(); phase functions use .catch().
+log('WATCHDOG: arm a harness wake-up per phase — watch for '
+  + OUTDIR + '/security-findings.md (~30 min after launch), then '
+  + OUTDIR + '/artefact-next.md (~75 min). '
+  + 'Distinguish slow-but-alive (transcript events still growing) from genuinely hung before aborting; see SKILL.md NO SILENT HANG.')
+const [sec, deadCandidates] = await parallel([
+  () => security().catch(e => { log('security phase error: ' + (e && e.message)); return null }),
+  () => deadCodeSweep().catch(e => { log('dead-code phase error: ' + (e && e.message)); return null }),
+])
 const [grudgeCode, deadAdjud] = await parallel([
-  () => critical('grudge-code-review', DEADLINE_MS, () => grudgeCodeReview()),
-  () => critical('deadcode-adjudicate', DEADLINE_MS, () => deadcodeAdjudicate(deadCandidates)),
+  () => grudgeCodeReview().catch(e => { log('grudge error: ' + (e && e.message)); return null }),
+  () => critical('deadcode-adjudicate', SYNTHESIS_DEADLINE_MS, () => deadcodeAdjudicate(deadCandidates)),
 ])
 const grudgeOut = (grudgeCode || '(grudge code-review step did not complete)') + '\n\n=== DEAD-CODE ADJUDICATION ===\n\n' + (deadAdjud || '(dead-code adjudication step did not complete)')
 
@@ -165,7 +199,7 @@ const grudgeOut = (grudgeCode || '(grudge code-review step did not complete)') +
 // turn reliably blew the deadline on large artefact + large finding sets. The Planner is read-heavy
 // (no writing); the Author is write-heavy (no decisions). Each carries roughly half the context.
 // Both steps are critical() — a stalled planner produces nothing for the author to act on.
-const changePlan = await critical('synthesise-plan', DEADLINE_MS, () => agent(
+const changePlan = await critical('synthesise-plan', SYNTHESIS_DEADLINE_MS, () => agent(
   GROUND + '\n\nYOUR ROLE: CHANGE PLANNER — read the artefact and all findings, decide what changes, output a structured plan. Do NOT write artefact-next.md yet.\n\n'
   + 'INPUTS:\n- Security findings:\n' + ((sec && sec.synthesis) || '(none)')
   + '\n\n- Adversarial review + dead-code adjudication:\n' + (grudgeOut || '(none)')
@@ -177,7 +211,7 @@ const changePlan = await critical('synthesise-plan', DEADLINE_MS, () => agent(
   + 'Artefact: ' + ARTEFACT + '  Code map: ' + CODEMAP,
   { label: 'synthesise-plan', phase: 'Synthesis' }))
 
-const synth = await critical('synthesise-author', DEADLINE_MS, () => agent(
+const synth = await critical('synthesise-author', SYNTHESIS_DEADLINE_MS, () => agent(
   GROUND + '\n\nYOUR ROLE: AUTHOR — apply the change plan below mechanically to produce the next artefact version. Make no new decisions; implement exactly what the plan specifies.\n\n'
   + 'CHANGE PLAN:\n' + (changePlan || '(planner did not complete — no artefact can be written; return a clear error)')
   + '\n\nRULES: PRESERVE correct content verbatim with its id; ADD with fresh non-colliding ids + coverage rows; recompute Counts ACCURATELY (requirement bullets == coverage rows; no duplicate ids); no open-questions section in the artefact — open items are in the plan above and belong in your return summary only; append Changelog + Requirements-coverage map + dead-code appendix. House language/style.\n\n'
