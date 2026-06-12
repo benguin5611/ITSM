@@ -1,6 +1,6 @@
 ---
-name: json-schema
-description: Build, edit, and audit JSON schemas. Adapts to any schema format via pluggable documentation and seed templates.
+name: custom-json-schema
+description: Build, edit, and audit JSON schemas. Adapts to any schema format via pluggable documentation and seed templates. Use when asked to build, edit, validate, or audit a JSON schema for any format once its two companion files (docs-reference.md and skeleton-schema.md) are populated — the skill refuses to run until they contain real content.
 argument-hint: "[file-path] [--audit]"
 ---
 
