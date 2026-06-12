@@ -44,6 +44,9 @@ Each reads a single `config.json` in the working directory, so runs are reproduc
 
 ## Phase 0 — Prerequisites & resolve target
 1. Require `gh` (authenticated) and `python3`/`jq`. `gh auth status` must show a logged-in account.
+   **This makes the skill local-only:** on claude.ai the sandbox has no authenticated `gh` and no
+   repo access — stop and tell the user to run it in Claude Code (or another local runtime) instead
+   of attempting a degraded run.
 2. **Mode:** `--self` → self; otherwise team. If ambiguous, ask.
 3. **Owner:** from the argument, else infer from the repos' git remotes (`git -C <repo> remote get-url origin`),
    else ask. (e.g. a GitHub org like `your-org`.)
