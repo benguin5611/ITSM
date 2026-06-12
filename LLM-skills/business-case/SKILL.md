@@ -55,7 +55,7 @@ Before proceeding, confirm: **"Of all these requirements, what would you weigh m
 ### Output
 Document requirements as two lists:
 - **Must-have (R1, R2, ...):** Each with a specific, testable definition
-- **Nice-to-have (N1, N2, ...):** Each clearly labeled as non-blocking
+- **Nice-to-have (N1, N2, ...):** Each clearly labelled as non-blocking
 
 ---
 
