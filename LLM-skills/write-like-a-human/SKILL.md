@@ -125,7 +125,7 @@ Avoiding repetition of a word by cycling through synonyms unnaturally: a person'
 
 **Tables for trivial data.** Small tables that would work better as prose.
 
-**Curly quotation marks.** "curly" instead of "straight" quotes. ChatGPT/DeepSeek specific; not used by Claude or Gemini.
+**Curly quotation marks.** "curly" instead of "straight" quotes. Most associated with ChatGPT/DeepSeek output, but other models produce them in some contexts — and so do Word, Google Docs, and macOS autocorrect on human-typed text. Never diagnostic alone; treat as corroborative only when clustered with stronger tells.
 
 ### Not AI tells (avoid false positives)
 

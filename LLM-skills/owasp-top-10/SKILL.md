@@ -7,7 +7,7 @@ description: >-
   This skill should be used when the user asks to "check for security vulnerabilities",
   "run a security audit", "OWASP scan", "find security issues", "review for security",
   "check OWASP", or mentions specific category codes like "A01", "API3", or "LLM06".
-allowed-tools: Read, Grep, Glob, Bash(git diff *), Bash(git log *), Bash(git status *)
+allowed-tools: Read, Grep, Glob, Bash(git diff:*), Bash(git log:*), Bash(git status:*)
 metadata:
   argument-hint: "[file-or-directory] [A01-A10|API1-API10|LLM01-LLM10] [--changed] [--web|--api|--llm]"
 ---

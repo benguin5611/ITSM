@@ -38,7 +38,7 @@ Only include risks that could change the recommendation or block implementation.
 ### 4. Requirements
 Two bullet-point lists:
 - **Must-have (R1, R2, ...):** Each with a brief, specific definition
-- **Nice-to-have (N1, N2, ...):** Each clearly labeled as non-blocking
+- **Nice-to-have (N1, N2, ...):** Each clearly labelled as non-blocking
 
 End with the decision criteria: what the user identified as the most important factors when choosing between options that all meet the must-haves.
 

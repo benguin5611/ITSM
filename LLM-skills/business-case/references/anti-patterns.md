@@ -70,7 +70,7 @@ Read this before starting AND check it again before publishing. Each pattern bel
 
 ---
 
-## 7. Mislabeled Options
+## 7. Mislabelled Options
 
 **Wrong:** Calling an option "Standalone" when it actually requires 2 tools.
 
