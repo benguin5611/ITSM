@@ -11,7 +11,7 @@ gaps/strengths breakdown for the caller.
 Overrides (evidence-based level corrections) come from config.json["overrides"]:
   [["login","disc-id",level,"cited reason"], ...]
 """
-import json, glob, os, collections
+import json, glob, os, sys, collections
 from discmap import load_config, get_disciplines
 
 cfg = load_config(); WORK = cfg["workdir"]; MODE = cfg.get("mode", "team")
@@ -107,9 +107,13 @@ else:
 # evidence-based overrides from config
 for ov in cfg.get("overrides", []):
     try: p, d, lvl, reason = ov
-    except Exception: continue
+    except Exception:
+        print(f"WARNING: malformed override {ov!r} — skipping. Expected [login, disc-id, level, reason].", file=sys.stderr)
+        continue
     if p in matrix and d in matrix[p]["cells"]:
         matrix[p]["cells"][d]["level"] = lvl; matrix[p]["cells"][d]["override"] = reason
+    else:
+        print(f"WARNING: override {ov!r} matches no person/discipline cell — check the login and disc-id.", file=sys.stderr)
 
 # bus-factor (team) and gaps/strengths (self)
 busfactor = {}
