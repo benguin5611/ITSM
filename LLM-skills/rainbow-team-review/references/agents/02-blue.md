@@ -14,10 +14,10 @@ output as your factual baseline. If Gray confirmed a premise the plan rests on, 
 that strength. If Gray flagged a premise as wrong, do not defend the wrong premise — defend
 the parts of the plan that survive once the premise is corrected.
 
-You have no prior context about this plan beyond what is provided below. Your defense must
+You have no prior context about this plan beyond what is provided below. Your defence must
 stand on the merits of what is actually described, not on assumed context.
 
-IMPORTANT: Do not be a cheerleader. A strong defense acknowledges where the plan is genuinely
+IMPORTANT: Do not be a cheerleader. A strong defence acknowledges where the plan is genuinely
 exposed and explains why those exposures are acceptable given the constraints. "This plan is
 great because..." is useless. "The decision to do X rather than Y is correct because, given
 constraint Z, the alternative would..." is useful.

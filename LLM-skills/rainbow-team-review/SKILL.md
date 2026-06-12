@@ -19,9 +19,9 @@ description: >
 
 A domain-agnostic methodology for stress-testing plans and decisions using ten independent
 agents with distinct perspectives — fact-checker, attacker, defender, out-of-band adversary,
-analyst, referee, builder, crisis strategist, defense-buildability filter, and attack-plausibility
+analyst, referee, builder, crisis strategist, defence-buildability filter, and attack-plausibility
 filter — plus a final Judge that consolidates their findings into a single verdict. Modelled on
-cybersecurity rainbow teaming (the named team colors are real industry terminology) but framed
+cybersecurity rainbow teaming (the named team colours are real industry terminology) but framed
 domain-agnostically so it applies equally to code architecture, business strategy, hiring,
 product launches, policy changes, and anything else where a careful adversarial pass before
 commitment is valuable.
@@ -29,24 +29,24 @@ commitment is valuable.
 Also known as "Release the Benji" — the activation phrase the skill was originally named after,
 honouring the team member who was already doing this in every meeting anyway.
 
-## Color quick reference
+## Colour quick reference
 
-| Color  | Role                          | What it asks                                                         | When it runs                |
+| Colour  | Role                          | What it asks                                                         | When it runs                |
 |--------|-------------------------------|-----------------------------------------------------------------------|-----------------------------|
 | Gray   | Fact-checker / intel          | What's actually true vs. what the plan claims is true?                | Phase 0 (always)            |
 | Red    | Attacker (design-internal)    | What's wrong with the design as written?                              | Phase 1 (always)            |
 | Blue   | Defender                      | Why is the design correct given its constraints?                      | Phase 1 (always)            |
 | Black  | Attacker (out-of-band)        | What's outside the plan's frame that could destroy it?                | Phase 1 (always)            |
-| Purple | Analyst / reconciler          | Which attacks survive the defenses? Severity?                         | Phase 2 (always)            |
+| Purple | Analyst / reconciler          | Which attacks survive the defences? Severity?                         | Phase 2 (always)            |
 | White  | Referee / proportionality     | Which validated concerns are worth implementing?                      | Phase 3 (Full Review only)  |
 | Yellow | Builder                       | Will this actually work when someone sits down to do it?              | Phase 3 (Full Review only)  |
 | Gold   | Crisis strategist (tabletop)  | If the worst plausible case happens mid-execution, what's recovery?   | Phase 3 (Full Review only)  |
-| Green  | Defense + buildability filter | Which Blue defenses are both effective AND actually buildable?         | Phase 4 (Full Review only)  |
+| Green  | Defence + buildability filter | Which Blue defences are both effective AND actually buildable?         | Phase 4 (Full Review only)  |
 | Orange | Attack + buildability filter  | Which Red attacks survive Yellow's build-reality check?                | Phase 4 (Full Review only)  |
 | —      | The Judge                     | Given everything: what gets done, what doesn't, why?                  | Final (always)              |
 
 The taxonomy follows April C. Wright's 2017 "Orange Is the New Purple" extended cybersecurity
-color-wheel model (primaries Red/Blue/Yellow + secondaries Purple/Green/Orange + governance
+colour-wheel model (primaries Red/Blue/Yellow + secondaries Purple/Green/Orange + governance
 White), with Black (physical/out-of-band adversary) and Gold (crisis tabletop) added from
 broader rainbow-teaming practice. Gray's intelligence-gathering role is adapted from the
 threat-research framing used in extended models.
@@ -56,7 +56,7 @@ threat-research framing used in extended models.
 Any time someone wants structured critical feedback on a plan before committing to it. The plan
 can be about anything — code, business, product, hiring, policy, process, infrastructure. If
 someone says "what do you think of this plan?" and it's something with real stakes, this skill
-adds rigor that a single-pass review can't match.
+adds rigour that a single-pass review can't match.
 
 ## How it works
 
@@ -71,7 +71,7 @@ plan from outside its frame (supply-chain, social engineering, external dependen
 competitor reaction, etc., adapted to the plan's domain). Purple reconciles all three. For
 Full Review, White (proportionality), Yellow (buildability), and Gold (disaster tabletop) then
 run in parallel against Purple's validated concerns. Once Yellow has completed, Green
-(defense-buildability filter) and Orange (attack-plausibility filter) run in parallel, each
+(defence-buildability filter) and Orange (attack-plausibility filter) run in parallel, each
 extracting the high-signal subset of Blue and Red findings through Yellow's lens. Finally,
 the Judge looks at everything holistically and delivers the single, definitive verdict the
 user reads first.
@@ -163,7 +163,7 @@ audit file, keeping just a compact index entry in active.
 - **Full Review** (all 10 agents + Judge) — for high-stakes decisions: major architecture
   changes, business pivots, significant policy decisions, anything expensive to reverse.
   Includes White (proportionality), Yellow (buildability), Gold (tabletop survivability),
-  Green (high-confidence defenses), and Orange (high-confidence attacks).
+  Green (high-confidence defences), and Orange (high-confidence attacks).
 - **Quick Review** (Gray + Red + Blue + Black + Purple + Judge) — for moderate decisions where
   you just want to find blind spots fast and get a verdict, without the full
   proportionality / pragmatism / tabletop / convergence-filter pass.
@@ -172,10 +172,15 @@ Gray Team and the Judge run in both modes. Gray runs first so factual errors and
 conflations are surfaced before adversarial debate begins; the Judge runs last as the final
 consolidated recommendation the user reads.
 
-When the user doesn't specify, infer from context. If unsure, ask:
+**Quick Review is the default.** Full Review roughly doubles the agent count, token spend,
+and wall-clock time — that cost is only proportionate when the decision is BOTH expensive to
+reverse AND costly if wrong (major architecture change, business pivot, significant policy
+decision). When the user doesn't specify a mode, run Quick Review unless the stakes clearly
+meet that bar. If the stakes look high but the user hasn't said so, ask:
 > "Full or Quick review? Full runs all ten agents including proportionality, buildability,
-> disaster-tabletop, and the Green/Orange convergence filters. Quick runs Gray + Red + Blue +
-> Black + Purple then jumps straight to the Judge's verdict."
+> disaster-tabletop, and the Green/Orange convergence filters — roughly double the time and
+> token cost. Quick runs Gray + Red + Blue + Black + Purple then jumps straight to the
+> Judge's verdict, and is the right call for most decisions."
 
 ## Orchestration: step by step
 
@@ -270,9 +275,14 @@ subagents in the same turn, each receiving the full plan text + Gray's output.
 If subagents aren't available, run sequentially — but compose all three prompts before running
 any. Do not let one team's output bleed into another's prompt.
 
+**Every agent launch is bounded — no silent hangs.** If an agent fails or stalls, don't retry
+indefinitely and don't wait silently: follow the failure-handling rules in
+[`references/orchestration.md`](references/orchestration.md) (one retry, then degrade with an
+explicit "Not run (failed)" marker that the Judge and the user both see).
+
 ### 4. Launch Purple (after Red + Blue + Black complete)
 
-Purple receives the full plan text, Gray's output, Red's full attack list, Blue's full defense,
+Purple receives the full plan text, Gray's output, Red's full attack list, Blue's full defence,
 and Black's full out-of-band vector list. Wait for all three Phase-1 teams to finish before
 launching Purple.
 
@@ -288,7 +298,7 @@ Gray's output + Purple's validated concerns:
 - **Yellow** assesses buildability — what's harder to execute than the plan implies, what's
   over-engineered, what practical details are missing.
 - **Gold** runs the tabletop / war-room exercise — assumes the worst plausible combination of
-  validated concerns materializes mid-execution and walks through detection, triage,
+  validated concerns materialises mid-execution and walks through detection, triage,
   containment, communication, and recovery. Produces a survivability verdict and pre-mortem
   recommendations.
 
@@ -302,8 +312,8 @@ and Orange in parallel. Each gets the full plan text + Gray's output + one prima
 output + Yellow's output:
 
 - **Green** receives Blue + Yellow. Extracts the high-confidence defensive recommendations
-  (defenses Blue articulated that survive Yellow's buildability test) and flags low-confidence
-  defenses the plan should not lean on.
+  (defences Blue articulated that survive Yellow's buildability test) and flags low-confidence
+  defences the plan should not lean on.
 - **Orange** receives Red + Yellow. Extracts the high-confidence attack vectors (Red findings
   whose preconditions Yellow's analysis confirms exist in the buildable plan) and downgrades
   theoretical attacks that don't survive the build-reality filter.
@@ -329,7 +339,7 @@ The Judge receives:
 - Orange Team output (Full Review only — pass "Not run (Quick Review)" for Quick)
 
 The Judge is allowed — and expected — to disagree with prior agents. It is not a mechanical
-summarizer; it weighs all the outputs and decides what should actually be done and not done.
+summariser; it weighs all the outputs and decides what should actually be done and not done.
 The Judge's output leads with a summary table (✅ to take, ❌ to NOT take, ❓ for open question)
 so the user can see the recommendations at a glance, then provides detailed reasoning below.
 
@@ -389,7 +399,7 @@ The agent prompts are designed to produce genuinely independent, non-generic ana
 - White *filters for proportionality* — prevents gold-plating
 - Yellow *speaks as a builder* — catches paper-reasonable complexity that causes real pain
 - Gold *runs the tabletop* — assumes the worst plausible failure mode and walks recovery
-- Green *filters Blue's defenses through Yellow's reality check* — extracts high-confidence
+- Green *filters Blue's defences through Yellow's reality check* — extracts high-confidence
   defensive recommendations
 - Orange *filters Red's attacks through Yellow's reality check* — extracts high-confidence
   attack vectors
