@@ -6,9 +6,9 @@ Multi-agent orchestration is powerful and expensive. Every rule below was paid f
 **Why:** an unbounded "be thorough" instinct produced a ~178-agent, ~5-hour run for one feature. It was not 178 agents' worth of signal; it was an order of magnitude past the point of diminishing returns, and most of the cost was queue tail and duplicated reads.
 **Rule:** agree an agent budget with the human *before* launch, and right-size every fan-out to it. Default an order of magnitude **cheaper** than a notional "comprehensive" run — a high-signal subset, inputs batched per agent, one worker per unit of work. Reserve the heavy modes — mine-everything finders, multi-vote verification, large finder pools — for **explicit opt-in** with a cost estimate shown. "Mine the whole journey" governs what you READ, not how many agents you spawn: a few agents reading widely beats many agents each reading a sliver.
 
-## 2. Wave-batch large fan-outs (~10 at a time)
-**Why:** the runtime caps true concurrency. Submitting 100+ agents at once does **not** run 100 at once — it runs ~10 and queues the other 90. The queued tail then sits idle burning its own deadline *while waiting for a slot it never got*, which presents as a mass timeout that looks like the agents hung. They never started.
-**Rule:** feed work in **waves** of roughly the concurrency cap (~10) so every agent in a wave starts executing immediately. Launch wave N, await it, launch wave N+1. The deadline clock on a worker should only ever cover *its own execution*, never time spent queued behind other workers. Size the wave to the runtime's real concurrency, not your item count.
+## 2. Never let a deadline timer count queue time
+**Why:** the runtime caps true concurrency. Submitting 100+ agents at once runs ~10 and queues the rest — the queueing itself is harmless (the harness schedules them as slots free up and every call completes). The failure is **self-inflicted**: a hand-rolled deadline timer wrapped around the call starts ticking at *submission*, so the queued tail burns its whole deadline *waiting for a slot*, which presents as a mass timeout that looks like the agents hung. They never started.
+**Rule:** the deadline clock on a worker should only ever cover *its own execution*, never time spent queued behind other workers. Achieve that one of two ways: make the deadline generous enough to absorb worst-case queue time, or feed work in **waves** of roughly the concurrency cap (~10) so every agent in a wave starts executing immediately and its timer covers only its own run. If you bound nothing by hand, just submit the fan-out whole and let the harness schedule it.
 
 ## 3. Decompose read-all / write-all MONOLITHS
 **Why:** one agent told to read everything *and* write everything will blow any deadline — not because it hung, but because it is genuinely doing 20+ minutes of work in a single bounded step. Lengthening its deadline does not help; the work is simply too big for one agent and one turn.
@@ -33,7 +33,7 @@ The same split rescues an *overloaded* agent that bundles two heavy jobs (e.g. a
 - An IDE/host restart kills background tasks, and a killed task's *started* events **linger as phantom "in-flight" entries**. Reading the in-flight count says "still running" when nothing is. Judging liveness by that count resumes on top of a run that is actually dead — or refuses to resume one that is.
 - Blindly resuming into the **same unguarded failure** just re-hangs the same step, twice over, burning the budget again.
 **Rule:**
-1. Keep inputs/args in a **file** the script reads, so a resume re-passes them identically.
+1. Workflow scripts have **no filesystem access** — a script cannot read its inputs back from a file. **Bake config into the script file itself** (the harness persists every invocation's script under the session directory — edit that copy and relaunch via `scriptPath`), and **re-pass `args` verbatim alongside `resumeFromRunId`**.
 2. Before resuming, confirm the prior run is **genuinely dead** — judge by *recent file writes / transcript events*, never by the in-flight count (which lies after a host restart).
 3. **Never resume blindly into the same failure twice.** Diagnose first: bound the unbounded step, split the monolith (§3), or fix the input — *then* resume. A resume from cache replays completed agents and re-runs only the failed step, so the fix is cheap once you know what it is.
 
@@ -44,9 +44,9 @@ The same split rescues an *overloaded* agent that bundles two heavy jobs (e.g. a
 ## Quick checklist before you launch a fan-out
 - [ ] Agent budget agreed with the human; default an order of magnitude below "comprehensive"; heavy modes opt-in only.
 - [ ] Inputs batched per agent (one worker per unit), not one agent per artefact.
-- [ ] Large fan-outs run in **waves** (~10), never 100+ at once.
+- [ ] No deadline timer can count queue time — generous backstops, or waves (~10) so a timer covers only its own run.
 - [ ] No read-all/write-all monolith — split into planner + waved writers + reassembly.
 - [ ] Every fan-out `agent()` deadline-bounded (degrade-to-null in a barrier); every sequential single-point-of-failure step guarded (deadline → retry once → loud abort with a resume hint).
 - [ ] Deadlines are generous backstops; a **progress** watchdog (harness wake-up, not a bash loop) is the real stall detector.
-- [ ] Resume plan: args in a file; confirm death by recent writes (not in-flight count); diagnose before any second resume.
+- [ ] Resume plan: config baked into the script; `args` re-passed verbatim with `resumeFromRunId`; confirm death by recent writes (not in-flight count); diagnose before any second resume.
 - [ ] On a loud abort, inspect the artefact on disk before re-running.

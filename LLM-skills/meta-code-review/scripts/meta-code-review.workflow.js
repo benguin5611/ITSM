@@ -9,7 +9,9 @@
 //
 // Launch: Workflow({ scriptPath: ".../meta-code-review/scripts/meta-code-review.workflow.js", args: { ...config } })
 // Recover a stall: Workflow({ scriptPath, resumeFromRunId, args: { ...config } })
-//   NOTE: args must be re-passed on resume — they are not stored between runs.
+//   NOTE: args must be re-passed verbatim on resume — they are not stored between runs. Scripts have
+//   NO filesystem access, so config cannot be read from a file: pass it via args, or bake it into a
+//   copy of this script (the harness persists every invocation's script under the session directory).
 //
 // args (all optional; supply what the pass needs):
 //   artefact           path to the artefact under review (spec / test-suite / design)
@@ -46,8 +48,10 @@ export const meta = {
 // then aborts LOUDLY with a resume hint rather than hanging silently.
 const DEADLINE_MS = (args && args.deadlineMs) || 8 * 60 * 1000 // 8 min/attempt — generous; fails fast on a true hang
 const SYNTHESIS_DEADLINE_MS = (args && args.synthDeadlineMs) || 12 * 60 * 1000 // 12 min for synthesis/adjudication/grudge on larger inputs
+const HAS_TIMERS = typeof setTimeout === 'function'
+if (!HAS_TIMERS) log('WARNING: no timers in this sandbox — deadline bounding is OFF; rely on the watchdog wake-up')
 function withDeadline(p, ms, label) {
-  if (typeof setTimeout !== 'function') return Promise.resolve(p) // sandbox without timers: degrade gracefully
+  if (!HAS_TIMERS) return Promise.resolve(p)
   let t
   const timeout = new Promise((_, rej) => { t = setTimeout(() => rej(new Error('DEADLINE: "' + label + '" exceeded ' + ms + 'ms')), ms) })
   return Promise.race([

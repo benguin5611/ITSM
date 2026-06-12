@@ -69,7 +69,7 @@ phase until the prior checkpoint is signed off.
 
 ### Phase 0 — Discovery gate (blocking, human-approved)
 
-No code is written until the unknowns are mapped and the human signs off. Produce five things (see
+No code is written until the unknowns are mapped and the human signs off. Produce six things (see
 [`references/discovery-gate-checklist.md`](references/discovery-gate-checklist.md)):
 
 - **A dependency-coupling map** — for every "shared" or "generic" component you intend to build on,
@@ -87,6 +87,9 @@ No code is written until the unknowns are mapped and the human signs off. Produc
   identifier each consumer binds to (route vs symbol vs field), run the breaking-change linter against
   the baseline as the oracle, and enumerate every break with an accept/bridge decision. Breaking changes
   are planned, not discovered.
+- **A filterability & observability design** — for every new data field, an explicit filterability
+  decision (encrypted PII is non-filterable by design); for every new handler or background job, the
+  trace attributes it will emit. Both are expensive to retrofit — decided here, recorded in the spec.
 
 On sign-off — **still before any code** — create the parent tracking issue (an epic for a feature, a
 single issue for small work). You don't need the full breakdown yet, you need the **ID**: cut the
@@ -186,8 +189,9 @@ Depth and reliability rules are in [`references/orchestration-economy.md`](refer
 the headline rules every run obeys:
 
 - **No silent hangs.** Bound work; make a stall loud and bounded, never an invisible wait.
-- **Wave-batch large fan-outs** (~10 at a time) — the harness caps concurrency, so blasting 100+ at
-  once just makes the queued tail burn its deadline waiting.
+- **Never let a deadline timer count queue time** — the harness caps concurrency and queues the rest
+  harmlessly, but a hand-rolled timer that starts at submission mass-aborts queued workers that never
+  ran; use generous backstops, or wave-batch (~10) so a timer covers only its own run.
 - **Decompose read-all/write-all monoliths** into a bounded planner (reads summaries) + per-unit
   writers (each reads only its slice).
 - **Deadlines are coarse, generous backstops — not the detector.** A liveness watchdog that judges by

@@ -33,9 +33,9 @@ The mistakes this skill exists to prevent. Each one was paid for in a real build
 **Instead:** decompose into a planner that scopes the work plus waved writers each owning a bounded slice. See `references/orchestration-economy.md` and `references/project-binding.md`.
 
 ## A7. Tight fan-out deadlines that count queue time
-**Symptom:** fan-out agents are given deadlines that start ticking while they sit queued, so a slow queue trips mass false-timeouts on agents that never ran.
-**Why it bites:** you abort live, healthy work and the failure looks like a code problem when it is a scheduling artefact.
-**Instead:** wave-batch large fan-outs, use generous backstops, and rely on a liveness watchdog (transcript still growing = alive) rather than a wall-clock that counts queue time. See `references/orchestration-economy.md` and `references/project-binding.md`.
+**Symptom:** fan-out agents are given hand-rolled deadlines that start ticking at submission, while the agents sit queued behind the runtime's concurrency cap — so a slow queue trips mass false-timeouts on agents that never ran.
+**Why it bites:** you abort live, healthy work and the failure looks like a code problem when it is a scheduling artefact. The harness queues excess calls harmlessly; the timeout is self-inflicted by where the timer starts.
+**Instead:** never let a deadline count queue time — use generous backstops (or wave-batch so each timer covers only its own run), and rely on a liveness watchdog (transcript still growing = alive) as the real stall detector. See `references/orchestration-economy.md` and `references/project-binding.md`.
 
 ## A8. Re-running the whole monolith to recover a small failed tail
 **Symptom:** one late sub-task fails, so the entire long run is restarted from the top.
