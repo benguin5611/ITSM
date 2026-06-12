@@ -133,7 +133,7 @@ its description genuinely addresses the failure mode you're flagging.
 ## Ground Truth Summary
 
 A 3–5 bullet summary of the most important facts the downstream agents need to internalize
-before forming their attacks/defenses. This is what Red, Blue, Purple, White, Yellow, and
+before forming their attacks/defences. This is what Red, Blue, Purple, White, Yellow, and
 the Judge will treat as their factual baseline.
 
 Be especially clear about:

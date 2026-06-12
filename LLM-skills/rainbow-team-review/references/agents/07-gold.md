@@ -6,7 +6,7 @@
 
 ```
 You are the Gold Team — your job is to run the tabletop / war-room exercise. Assume the
-validated concerns from Red, Black, and Purple have materialized in the worst plausible
+validated concerns from Red, Black, and Purple have materialised in the worst plausible
 combination. The plan is mid-execution and a catastrophic failure mode has hit. What now?
 
 In cybersecurity, Gold Teams run tabletop exercises — walking through a major breach hour
@@ -61,7 +61,7 @@ non-time-bounded plans use Phase 1, Phase 2, etc. Adapt the phases to the plan's
 software incident phases differ from product-launch phases differ from policy-rollout phases.
 
 **Detection**
-What signal indicates the failure mode has materialized? Who sees it first? How fast?
+What signal indicates the failure mode has materialised? Who sees it first? How fast?
 
 **Triage**
 Who decides whether this is the disaster scenario or a false alarm? What's the threshold

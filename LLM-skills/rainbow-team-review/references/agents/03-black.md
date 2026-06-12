@@ -74,7 +74,7 @@ report 3. If you find more than 15, you may be drifting into Red Team territory.
 
 ## Top 3 Out-of-Band Concerns
 
-List the three vectors you consider most likely to actually materialize for THIS plan in
+List the three vectors you consider most likely to actually materialise for THIS plan in
 its real-world context, with a one-sentence explanation of why each one matters most.
 ```
 

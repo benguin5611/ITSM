@@ -25,6 +25,16 @@ Each per-agent file under `references/agents/` contains a self-contained prompt 
 
 The prompts are domain-agnostic by design. They use "plan," "approach," and "decision" — never domain-specific terms like "code," "deploy," or "revenue."
 
+## Failure handling — fail fast and loud, never hang
+
+Agents can fail (tool errors, timeouts, a dead subagent). The pipeline must degrade explicitly, never stall waiting and never silently drop a lens.
+
+- **One retry per agent.** If an agent errors or returns nothing usable, relaunch it once with the same prompt. If the retry also fails, mark that agent's output as `"Not run (failed)"` and move on. Never retry more than once and never block the pipeline indefinitely on a single agent.
+- **Gray is the only hard dependency.** If Gray fails twice, stop and tell the user — every downstream agent is anchored to Gray's ground truth, so proceeding without it undermines the whole review. Offer to retry or to run a degraded review with `{{GRAY_TEAM_OUTPUT}}` set to `"Not run (failed) — claims in the plan are UNVERIFIED"`, but make the user choose.
+- **Phase-1/3/4 agents degrade individually.** If Red, Blue, Black, White, Yellow, Gold, Green, or Orange fails twice, substitute `"Not run (failed)"` for its output in every downstream prompt and continue. Special case: if Yellow fails, skip Green and Orange entirely (both depend on Yellow) and pass `"Not run (Yellow failed)"` for all three.
+- **The Judge must always run.** It already knows how to handle `"Not run (...)"` inputs from Quick mode; failed agents look the same to it. If the Judge itself fails twice, present Purple's validated concerns directly with an explicit warning that no final arbitration was performed.
+- **Surface every degradation to the user.** The presented verdict must name any lens that didn't run, e.g.: *"⚠️ Black Team failed twice and was skipped — out-of-band risks were not assessed in this review."* Never present a degraded review as a complete one.
+
 ## Decision record workflow
 
 The decision record is what stops agents re-litigating already-decided findings on every pass. The template is at [`references/decision-record-template.md`](decision-record-template.md). This section is the operational detail for SKILL.md's "Decision record — persistence across runs" — the orchestrator does these things at the times specified there.
@@ -174,7 +184,7 @@ Moderate / Low / —), source column with full team names. No separate source-co
 DO NOT paste "Actions to take — detail" or "Actions to NOT take — detail" here.
 
 [Quick Review only, append an italic line after Open Questions:]
-> _This was a Quick Review. Proportionality (White), buildability (Yellow), disaster tabletop (Gold), defense-buildability (Green), and attack-plausibility (Orange) were not assessed. Run a Full Review if you want those lenses applied._
+> _This was a Quick Review. Proportionality (White), buildability (Yellow), disaster tabletop (Gold), defence-buildability (Green), and attack-plausibility (Orange) were not assessed. Run a Full Review if you want those lenses applied._
 
 ### Per-team breakdown template (used only if the user chose Full breakdown in Step 1)
 
@@ -190,7 +200,7 @@ DO NOT paste "Actions to take — detail" or "Actions to NOT take — detail" he
 - White Team accepted **[N]**, rejected **[N]**, modified **[N]**
 - Yellow Team rated complexity as **[verdict]**; **[N]** buildability concerns
 - Gold Team tabletop verdict: **[verdict]**; **[N]** pre-mortem recommendations
-- Green Team identified **[N]** high-confidence defenses; flagged **[N]** low-confidence
+- Green Team identified **[N]** high-confidence defences; flagged **[N]** low-confidence
 - Orange Team identified **[N]** high-confidence attacks; downgraded **[N]** theoretical
 ```
 

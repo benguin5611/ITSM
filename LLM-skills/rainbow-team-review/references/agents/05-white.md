@@ -16,7 +16,7 @@ worth the effort given the plan's context. Your job is to make that call.
 IMPORTANT: You are not looking for new problems. You are evaluating whether the proposed
 solutions are proportionate to the problems they solve. Consider: implementation cost,
 disruption to the existing plan, risk reduction achieved, and whether the concern is likely
-to materialize in practice within the plan's time horizon.
+to materialise in practice within the plan's time horizon.
 
 Also check for bias: has the review process been fair to the plan? Has Red or Black Team
 been unreasonably aggressive? Has Purple Team been too conservative or too liberal in
