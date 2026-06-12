@@ -34,13 +34,16 @@ const WRITE_MS = (args && args.writeMs) || 10 * 60 * 1000 // one writer slice: b
 const STITCH_MS = (args && args.stitchMs) || 6 * 60 * 1000 // reassembly: cheap, still bounded
 
 // ---- withDeadline: bound any promise. ---------------------------------------
-// Guarded by `typeof setTimeout` so a sandbox without timers degrades gracefully
-// rather than throwing. No Date.now anywhere — we race against a timer, we do not
-// poll a clock (a clock read tells you elapsed time, which is exactly the wrong
-// signal; see §4). Inside parallel(), callers turn a rejection into null so one
-// slow worker degrades to a gap instead of wedging the whole barrier.
+// If the sandbox has no timers, degrade — but say so LOUDLY: silently running
+// unbounded would defeat the NO SILENT HANG discipline while appearing to enforce
+// it. No Date.now anywhere — we race against a timer, we do not poll a clock (a
+// clock read tells you elapsed time, which is exactly the wrong signal; see §4).
+// Inside parallel(), callers turn a rejection into null so one slow worker
+// degrades to a gap instead of wedging the whole barrier.
+const HAS_TIMERS = typeof setTimeout === 'function'
+if (!HAS_TIMERS) log('WARNING: no timers in this sandbox — deadline bounding is OFF; rely on the watchdog wake-up')
 function withDeadline(p, ms, label) {
-  if (typeof setTimeout !== 'function') return Promise.resolve(p) // no timers: don't pretend to bound it
+  if (!HAS_TIMERS) return Promise.resolve(p)
   let t
   const timeout = new Promise((_, rej) => {
     t = setTimeout(() => rej(new Error('DEADLINE: "' + label + '" exceeded ' + ms + 'ms')), ms)
@@ -118,6 +121,10 @@ const planJson = await critical('plan', PLAN_MS, () => agent(
 let slices = []
 try { slices = JSON.parse(planJson) } catch (e) { log('planner did not return JSON: ' + (e && e.message)) }
 log('planner produced ' + slices.length + ' slices')
+// Zero slices means the whole run would "succeed" doing nothing — fail LOUDLY instead
+// of silently completing empty. (Or use the agent() schema option, which validates and
+// retries the structured output at the tool layer and removes this failure mode.)
+if (!slices.length) throw new Error('FAIL-FAST: planner returned no usable slices — nothing to write; fix the planner prompt/output before resuming')
 
 // 2) WRITERS (waved fan-out): one worker per slice, each reads ONLY its slice and
 // writes ONE unit. Bounded so a single slow writer degrades to null; waved so no
