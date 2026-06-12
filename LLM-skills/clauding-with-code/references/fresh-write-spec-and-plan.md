@@ -240,7 +240,7 @@ grep -n "<old-rpc-name>\|<old-type-name>" SPEC.md PR-PLAN.md
 grep -n "<old-migration-num>" SPEC.md PR-PLAN.md architecture-c4.md
 
 # Stale RPC counts
-grep -n "<old-count> ConnectRPC\|<old-count> new.*RPC" SPEC.md PR-PLAN.md
+grep -n "<old-count> RPC\|<old-count> new.*RPC" SPEC.md PR-PLAN.md
 
 # Stale enum value counts
 grep -n "(0–<old-max>)\|values.*0–<old-max>" SPEC.md

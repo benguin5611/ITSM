@@ -22,7 +22,7 @@ When the changeset is detected as domain-specific (or the user specifies `--doma
 |---|---|
 | Frontend | `.vue`, `.ts` in `web/`, `*_pb.ts`, `vitest.config*`, FormKit schema files |
 | Backend | `.go`, `.proto`, `sqlc.yaml`, `*.sql` in `db/`, `buf.gen.yaml`, `buf.work.yaml` |
-| Infrastructure | `*.tf`, `*.tfvars`, `docker-compose*.yml`, `Dockerfile*`, `.github/workflows/*.yml`, `keycloak*.sql` |
+| Infrastructure | `*.tf`, `*.tfvars`, `docker-compose*.yml`, `Dockerfile*`, `.github/workflows/*.yml`, identity-provider seed SQL |
 
 ## Reconciliation rules
 - **De-duplicate across lenses** before acting — the same issue surfaces under multiple roles; merge to one finding with the strongest evidence.

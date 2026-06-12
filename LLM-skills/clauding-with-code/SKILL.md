@@ -35,7 +35,7 @@ the human stays the decision-maker and the code is the medium, not the master. E
 that stance made concrete: propose don't dispose, gate before you build, pause at every real fork.
 
 This skill is **project-agnostic**. Every concrete tool, command, path, and stack detail lives in
-[`references/bndry.md`](references/bndry.md) — read it once at the start of a real run to bind the
+[`references/project-binding.md`](references/project-binding.md) — read it once at the start of a real run to bind the
 generic method to the actual project, and quarantine anything project-specific there, never here.
 
 ## Prime directives (strict precedence — lower number wins on conflict)
@@ -107,7 +107,7 @@ spec (methodology and writing rules in [`references/fresh-write-spec-and-plan.md
 blast-radius, a **mandatory testing guide**, a **filterability design decision** (for every new
 data field: will users need to filter by it in the platform? encrypted PII is non-filterable by
 design — decide this at design time, not after the schema is built), and an **observability plan**
-(for every new handler or background job: what Honeycomb attributes will it emit — at minimum tenant
+(for every new handler or background job: what trace attributes will it emit — at minimum tenant
 ID, primary entity, and operation result; plan instrumentation as a first-class design output, never
 an afterthought). Keep working notes discrete while you draft, but the
 *handed-over* spec is one document plus only minimal companions (an architecture diagram, the PR
@@ -151,8 +151,8 @@ code in a bespoke local setup are self-referential; a prod replica surfaces the 
 ### Phase 3 — Review (delegate to meta-code-review)
 
 Do **not** re-implement reviewing. Hand the built work to **`meta-code-review`**, which composes the
-review lenses (`rainbow-team-review`, `security-audit-bndry` / `owasp-top-10`, `/simplify`, dead-code
-and grudge passes), grounds them against the real code, de-duplicates, and arbitrates into one
+review lenses (`rainbow-team-review`, a whole-codebase security audit / `owasp-top-10`, `/simplify`,
+dead-code and grudge passes), grounds them against the real code, de-duplicates, and arbitrates into one
 human-in-the-loop verdict. Feed its findings back into the build loop.
 
 **Checkpoint:** the human accepts the review verdict (or directs another pass).
@@ -206,7 +206,7 @@ the headline rules every run obeys:
 |---|---|---|
 | Full multi-lens review of the built code | `meta-code-review` | re-reviewing here |
 | Adversarial stress-test of a plan/design | `rainbow-team-review` | inventing your own red-team |
-| Security audit / OWASP pass | `security-audit-bndry` / `owasp-top-10` | a bespoke security checklist |
+| Security audit / OWASP pass | `owasp-top-10` (or your whole-codebase security-audit skill) | a bespoke security checklist |
 | Make a doc read like a human wrote it | `write-like-a-human` | hand-editing AI tells |
 
 ## Load-bearing lessons (why this skill exists)
@@ -294,6 +294,6 @@ A team wants to add **shared, link-based access to a record for an outside party
 - The spec and its minimal companions live in the project's documentation/working area (the human
   chooses; default to the repo's docs location or a clearly-named working folder).
 - Match the repo's existing conventions for everything (directive #2). Bind the generics to this
-  project via [`references/bndry.md`](references/bndry.md).
+  project via [`references/project-binding.md`](references/project-binding.md).
 - Australian English in everything produced.
 - **Never** push to a remote until the human explicitly says so.

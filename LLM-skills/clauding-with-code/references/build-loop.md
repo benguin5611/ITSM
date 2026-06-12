@@ -4,7 +4,7 @@ Build discipline for the implementation phase. Code is shipped in **small, verif
 run through the same tight loop. The loop is not bureaucracy — it serves the prime directives:
 linting and static analysis enforce **secure-by-design** and **match-conventions** for free, every
 iteration, without you having to remember to. Concrete toolchain, commands, and versions →
-[`bndry.md`](bndry.md).
+[`project-binding.md`](project-binding.md).
 
 ## Before you write: three parallel tracks
 

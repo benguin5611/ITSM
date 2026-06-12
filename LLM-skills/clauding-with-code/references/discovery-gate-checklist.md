@@ -115,7 +115,7 @@ Two design properties that are expensive to retrofit — decide them before the 
 - [ ] Record each filterability decision in the spec so the next developer knows it was deliberate.
 
 **Observability:**
-- [ ] For every new Connect handler or background job: what Honeycomb attributes will it emit? Plan this as a first-class design output. At minimum: tenant ID, primary entity being operated on, and operation result (success / error code).
+- [ ] For every new service handler or background job: what trace/span attributes will it emit? Plan this as a first-class design output. At minimum: tenant ID, primary entity being operated on, and operation result (success / error code).
 - [ ] Confirm the existing trace/span structure in similar handlers, and use it as the reference — don't invent a new attribute naming convention without checking what's already there.
 - [ ] Any handler touching a new or high-risk code path must add structured span attributes (not just a log line) so it's queryable in production.
 
