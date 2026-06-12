@@ -277,167 +277,22 @@ These articles change occasionally. If a user reports unexpected stripping or re
 
 **The "Clean up styles" button** strips inline styles deemed non-essential. Only run it deliberately — it can flatten intentional formatting.
 
-**Best practice per Zendesk**: use `class` attributes with CSS defined in the help centre theme. **Reality for ad-hoc articles**: inline styles are the only way to guarantee rendering without coordinating theme changes. This skill defaults to inline styles for self-contained article authoring. See [Inline styles vs CSS classes](#inline-styles-vs-css-classes) below.
+**Best practice per Zendesk**: use `class` attributes with CSS defined in the help centre theme. **Reality for ad-hoc articles**: inline styles are the only way to guarantee rendering without coordinating theme changes. This skill defaults to inline styles for self-contained article authoring. See the Inline styles vs CSS classes section in [references/html-and-layout-rules.md](references/html-and-layout-rules.md).
 
 **Margin properties are only allowed on `<table>` elements.** This is the single biggest gotcha in Zendesk's allowed-styles list. `margin`, `margin-top`, `margin-bottom`, `margin-left`, `margin-right` are NOT in the global allowed list — they're only allowed on `<table>`. Use them on a `<div>`, `<h2>`, `<p>`, `<ul>`, or any other element and Zendesk silently strips them, leaving the element with whatever spacing the theme provides. Use `padding` instead — `padding` and all four `padding-*` properties are globally allowed. To create vertical space between any two non-table elements, use `padding-top` on the lower element or `padding-bottom` on the upper one. To indent a list, use `padding-left: 20px` on the `<ul>` or `<ol>`, not `margin-left`.
 
 **Spacing tip — let the theme handle heading-to-content gaps.** Most help centre themes already provide spacing between a heading and the next element (paragraph, list, table). Adding `padding-bottom` to a heading stacks on top of that and produces visibly excessive space. Reach for `padding-bottom` on headings only when the theme's natural gap is genuinely too small. Use `padding-top` on a heading to create extra space above it (typically before a major section), and trust the theme for the gap below.
 
-**Dark mode is widely supported.** If your help centre theme supports dark mode — most modern Zendesk themes do — the theme typically forces `.article-body` text colours via `!important` rules that swap between light and dark palettes. Two consequences for inline styles: (1) any inline `color` you set on a prose element (`<p>`, `<li>`, `<h2>`, `<td>`, etc.) loses to the theme override — it's either a no-op or it breaks dark mode if it survives Zendesk's cleanup; (2) any inline `background-color` survives both modes unchanged, so a hardcoded light callout background plus theme-painted near-white dark-mode text yields invisible content. See [Dark mode compatibility](#dark-mode-compatibility) below and [references/callout-patterns.md](references/callout-patterns.md). General theme behaviour and the principles that drive these rules are in [references/theme-notes.md](references/theme-notes.md).
+**Dark mode is widely supported.** If your help centre theme supports dark mode — most modern Zendesk themes do — the theme typically forces `.article-body` text colours via `!important` rules that swap between light and dark palettes. Two consequences for inline styles: (1) any inline `color` you set on a prose element (`<p>`, `<li>`, `<h2>`, `<td>`, etc.) loses to the theme override — it's either a no-op or it breaks dark mode if it survives Zendesk's cleanup; (2) any inline `background-color` survives both modes unchanged, so a hardcoded light callout background plus theme-painted near-white dark-mode text yields invisible content. See the Dark mode compatibility section in [references/html-and-layout-rules.md](references/html-and-layout-rules.md) and [references/callout-patterns.md](references/callout-patterns.md). General theme behaviour and the principles that drive these rules are in [references/theme-notes.md](references/theme-notes.md).
 
-### Supported HTML elements
+### Reference files — open when a check needs the full list
 
-The full canonical list lives at the Zendesk supported-HTML article. Common safe elements:
-
-**Structural**: `div`, `section`, `article`, `aside`, `header`, `footer`, `nav`, `figure`, `figcaption`, `details`, `summary`
-
-**Text**: `h1` through `h6`, `p`, `blockquote`, `pre`, `hr`, `br`
-
-**Inline**: `a`, `span`, `strong`, `em`, `b`, `i`, `u`, `s`, `code`, `kbd`, `mark`, `small`, `sub`, `sup`, `cite`, `q`, `time`, `del`, `ins`, `var`, `samp`, `dfn`, `abbr`, `bdi`, `bdo`, `ruby`, `rt`, `rp`, `data`
-
-**Lists**: `ul`, `ol`, `li`, `dl`, `dt`, `dd`
-
-**Tables**: `table`, `thead`, `tbody`, `tfoot`, `tr`, `th`, `td`, `caption`, `colgroup`, `col`
-
-**Media**: `img`, `audio`, `video`, `source`, `track`, `iframe` (restricted domains only)
-
-**Common attributes**: `aria-*`, `class`, `data-*`, `dir`, `id`, `lang`, `tabindex`, `title`
-
-### Unsafe HTML (stripped from articles by default)
-
-```
-applet, button, embed, form, input, object, script, style, textarea
-```
-
-There is a Knowledge admin setting ("Display Unsafe Content") to allow these, but it carries security warnings and should not be assumed enabled. Default to never using these.
-
-### Allowed inline styles
-
-Zendesk publishes an explicit allowed list for inline styles. Anything not on the list is stripped. The full list is in [references/allowed-inline-styles.md](references/allowed-inline-styles.md). Highlights:
-
-**Layout**: `display`, `width`, `height`, `min-width`, `min-height`, `max-width`, `max-height`, `padding*`, `box-sizing` (NOT `margin*` — table-only)
-
-**Typography**: `font*`, `color`, `text-align`, `text-decoration*`, `text-indent`, `text-transform`, `letter-spacing`, `line-height`, `word-spacing`, `white-space`, `vertical-align`
-
-**Borders & background**: `border*`, `border-radius`, `background*`, `outline`
-
-**Tables**: `border-collapse`, `border-spacing`, `margin*` (only on `<table>` elements)
-
-**Notably absent (do NOT use inline)**: `cursor`, `transition`, `transform`, `animation`, `filter`, `box-shadow`, `pointer-events`, `position`, `top/left/right/bottom`, `z-index`, `opacity`, `flex*`, `grid*`, `gap`, `margin*` (on non-table elements)
-
-For grid-like layouts, use `<table>`. For everything else, basic block layout with `padding` provides reliable spacing.
-
-### Allowed `href` protocols
-
-```
-ftp, http, https, mailto, sftp, sms, tel
-```
-
-### Allowed `src` protocols
-
-For `img`, `audio`, `video`, `source`, `track`:
-
-```
-blob, data, http, https
-```
-
-### Allowed `<iframe>` embed domains
-
-```
-https://content.jwplatform.com/
-https://fast.wistia.com/
-https://play.vidyard.com/
-https://player.vimeo.com/
-https://players.brightcove.net/
-https://web.microsoftstream.com/
-https://www.loom.com/
-https://www.microsoft.com/
-https://www.youtube-nocookie.com/
-https://www.youtube.com/
-```
-
-If an embed source isn't on this list, the iframe is stripped.
-
-### Wide tables — the layout pattern
-
-Most Zendesk themes render the article container at roughly **770–810px effective width** on desktop. The threshold of 700px content width gives a small safety margin for narrower viewports and browser zoom.
-
-For any table with 5+ columns or content width ≥ 700px:
-
-```html
-<div style="overflow-x: auto; padding-bottom: 48px;">
-<table style="width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid #999; min-width: 1000px;">
-  <thead style="background-color: rgba(0, 0, 0, 0.04); border-bottom: 2px solid #999;">
-    <tr>
-      <th style="padding: 12px; text-align: left; font-weight: 600; color: #999; border-right: 1px solid #999; min-width: 200px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">First col</th>
-      <th style="padding: 12px; text-align: center; font-weight: 600; color: #999; border-right: 1px solid #999; min-width: 55px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">Short</th>
-      <th style="padding: 12px; text-align: center; font-weight: 600; color: #999; border-right: 1px solid #999; min-width: 65px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">Two<br>Words</th>
-      <!-- ... -->
-    </tr>
-  </thead>
-  <tbody>
-    <tr style="border-bottom: 1px solid #999;">
-      <td style="padding: 12px; border-right: 1px solid #999; font-weight: 500;">Row label</td>
-      <td style="padding: 12px; text-align: center;">value</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-```
-
-Critical pieces:
-
-- **`<div style="overflow-x: auto;">`** wrapper — table scrolls instead of collapsing on narrow viewports.
-- **`padding-bottom` on the wrapper div** (not `margin-bottom` — would be stripped on a div). Provides space before the next element.
-- **`min-width` on `<table>`** (1000–1200px typical) — prevents column collapse when content is short. Tune so the first column doesn't end up with disproportionate whitespace.
-- **`min-width` on each `<th>`** — prevents narrow columns from squishing headers into 2-char stacks.
-- **`<br>` in multi-word headers** — keeps alignment clean instead of letting headers wrap unpredictably.
-- **Smaller `font-size` on multi-word headers** (e.g. 11–12px vs 13px body) — visual fit without truncation. Pair with uppercase + letter-spacing on `<th>` for a tidy header row.
-- **First column `min-width` should be just enough for the longest cell content.** If the column has noticeably excessive whitespace, reduce its `min-width` and consider reducing the table's `min-width` correspondingly.
-- **Border colour `#999`** is a mode-portable neutral. Don't reach for `#e2e8f0`/`#edf2f7` — they vanish against a dark page background.
-- **Header background `rgba(0, 0, 0, 0.04)`** tints whatever surface is underneath, so it darkens in light mode and barely shifts in dark mode — never breaks.
-- **`color: #999` on `<th>` text** is the only safe inline colour. **No inline `color` on `<td>` body cells** — let the theme paint the cell text in mode-appropriate colour.
-- **Most help centre themes apply NO default styling to `<table>` inside `.article-body`** — every property in the example above must be inline.
-
-### Spacing strategy
-
-Because `margin` is stripped on every element except `<table>`:
-
-| Goal | Wrong | Right |
-|---|---|---|
-| Space above a section heading | `<h2 style="margin-top: 64px;">` | `<h2 style="padding-top: 64px;">` |
-| Space below a paragraph or list | `<p style="margin-bottom: 16px;">` | `<p style="padding-bottom: 16px;">` (or trust theme) |
-| Indent a list | `<ul style="margin-left: 20px;">` | `<ul style="padding-left: 20px;">` |
-| Space between table and next heading | `<div style="margin-bottom: 32px;">` wrapper | `<div style="padding-bottom: 32px;">` wrapper, OR `padding-top` on the next heading |
-| Space between two `<table>` elements | Either `margin` works on tables, or `padding` on a wrapper | Both are fine |
-
-**Don't double-space headings.** Most themes provide natural spacing between a heading and the immediately-following element. Adding `padding-bottom` to a heading stacks on top of that and creates visibly excessive space. Reach for `padding-bottom` on a heading only when the theme's natural gap is genuinely insufficient (rare).
-
-### Footnote pattern
-
-Inline marker (use `<sup>` for visual lift):
-
-```html
-<td>Some capability<sup style="font-size: 10px;">¹</sup></td>
-```
-
-Or on a value cell where the marker qualifies the icon:
-
-```html
-<td>✏️<sup style="font-size: 10px;">²</sup></td>
-```
-
-Definitions at the foot of the article:
-
-```html
-<h2>Footnotes</h2>
-<p style="font-size: 12px; color: #999;"><strong>¹</strong> Definition of footnote 1.</p>
-<p style="font-size: 12px; color: #999;"><strong>²</strong> Definition of footnote 2.</p>
-```
-
-`color: #999` is a neutral mid-grey that reads acceptably against both light and dark page surfaces. Don't use `#718096`, `#2c3e50`, or `#1a202c` for footnotes — they all break dark mode.
-
-If the source has marker ¹ but no marker ², that doesn't mean ² is unused — search the full source. In tabular sources, footnote markers often appear inside cells alongside other content (e.g. `✏️ list only¹`, `✏️ run from form²`).
+- **[references/html-and-layout-rules.md](references/html-and-layout-rules.md)** — supported/unsafe HTML elements, allowed inline styles summary, allowed `href`/`src` protocols, iframe embed domains, the wide-table layout pattern, spacing strategy, footnote pattern, image insertion workflow, dark mode compatibility, and inline styles vs CSS classes.
+- **[references/allowed-inline-styles.md](references/allowed-inline-styles.md)** — the canonical Zendesk allowed-inline-styles list.
+- **[references/known-failure-modes.md](references/known-failure-modes.md)** — every known failure, with cause and fix. Read it when diagnosing a broken article; skim it before delivering a complex one.
+- **[references/callout-patterns.md](references/callout-patterns.md)** — dark-mode-safe callout HTML.
+- **[references/theme-notes.md](references/theme-notes.md)** — theme behaviour: palette tokens, what the theme already styles, what it isn't.
+- **[references/diataxis.md](references/diataxis.md)** — the full Diátaxis framework.
 
 ### Content fidelity — verify completeness
 
@@ -464,111 +319,11 @@ No further categorisation. Do not split topics into audience / feature area / do
 - 4–8 topics total. Fewer for a narrowly scoped article; more if it genuinely spans several subjects.
 - Topics name the *subject* of the article. They do not name the article's shape (`troubleshooting`, `faq`) or its type — the type is the separate content tag.
 
-### Image insertion workflow
-
-When an article needs inline images, the cleanest path is to **let Zendesk's WYSIWYG handle the upload and URL wiring**, then fix the cosmetics in source mode. Don't pre-build `<img>` placeholders with fake URLs expecting to transplant real URLs in later — that two-stage flow has more moving parts than it's worth.
-
-**Recommended flow:**
-
-1. Paste the prose-only HTML (no image tags) into the source editor.
-2. Switch to WYSIWYG. Position the cursor at each insertion point and use **Insert Image** — Zendesk uploads the file and inserts a `<figure><img ...></figure>` with the correct URL.
-3. Switch back to source mode and fix two things per image:
-   - **Alt text** — Zendesk's auto-insert uses the filename or empty alt; replace with a meaningful description.
-   - **Sizing styles** — re-add `style="max-width: 100%; display: block;"` on the `<img>` if the layout needs it (this is the only styling worth fighting for; everything else Zendesk inserts is acceptable).
-
-This takes ~10 seconds per image in source mode and avoids the brittleness of URL transplanting.
-
-### Dark mode compatibility
-
-If your help centre theme supports dark mode — triggered either by an explicit user toggle (often persisted to `localStorage`) or by `@media (prefers-color-scheme: dark)` — articles must render correctly in both modes.
-
-**The single rule that matters:** never set inline `color` on prose elements. Themes typically paint `.article-body` body text, headings, links, code, and blockquote with `!important` overrides that swap palette between light and dark mode. Inline `color` either loses to those overrides (and is invisible drift in the source) or — worse — survives and produces an unreadable combination in the other mode.
-
-What "prose elements" means here: `<p>`, `<li>`, `<span>`, `<strong>`, `<em>`, `<td>`, `<th>`, `<h2>`, `<h3>`, `<h4>`, `<blockquote>`, `<code>`, `<pre>`, `<figcaption>`. Anything containing reader-facing text.
-
-**What does survive both modes:** inline `background-color`, `border`, `padding`, `font-size` (on non-heading elements), `text-align`, `text-transform`, `letter-spacing`. None of these are swapped by themes.
-
-**The trap that breaks callouts — and row-header cells, accent rows, panels, anything with a coloured bg:** an inline `background-color: #fffaf0` (or `#f8fafc`, `#fafafa`, `white`, any hardcoded light hex) survives unchanged into dark mode. The theme's `!important` then paints the inner text near-white. Result: near-white text on light background = invisible. **This failure is element-agnostic** — it hits `<div>` callouts, `<td>` row-headers in the first column of a table, `<th>` header cells, accent `<tr>` rows, `<section>` banners, all identically. The fix is structural and the same for every shape: switch to a translucent `rgba()` background so the element tints the page surface in whichever mode is active, and remove every inline `color` so the theme paints the text. For callouts use the patterns in [references/callout-patterns.md](references/callout-patterns.md); for table headers, row-header cells, and subtle accents use `rgba(0, 0, 0, 0.04)`.
-
-**Muted text (footnotes, captions) is the one exception** where you do set an inline colour, because most themes don't apply muted text styling automatically to body paragraphs. Use `color: #999` — a neutral mid-grey that reads acceptably in both light and dark modes. Don't use any other hex for muted body text.
-
-Full theme-behaviour reference and the principles that motivate these rules are in [references/theme-notes.md](references/theme-notes.md).
-
-### Inline styles vs CSS classes
-
-Zendesk officially recommends CSS classes defined in the help centre theme. For ad-hoc articles authored without theme coordination, inline styles are more reliable: they survive theme changes, don't require coordination, and don't depend on classes the author can't define.
-
-**Use inline styles when**:
-
-- Authoring a one-off article
-- The author doesn't control the help centre theme
-- Layout requirements are specific to this article
-
-**Use classes when**:
-
-- The pattern repeats across many articles
-- The help centre theme is owned by the same team
-- An admin has already defined the classes
-
-Many Zendesk help centre themes define no article-body utility classes (no `.callout`, `.note`, `.alert`, `.warning`, etc.). If yours does, prefer them. If not, inline styles are mandatory for callouts and tables — if a pattern recurs often, extend the theme first rather than continuing to inline-style every instance.
-
-This skill defaults to inline styles unless the user says otherwise.
-
----
-
 ## 8. Writing reference — Australian English and style
 
 The full style reference is in [references/style-reference.md](references/style-reference.md). Read it before drafting or auditing a new article. The Australian English summary that follows is the quick-lookup version; the reference covers punctuation, names, numbers, dates, voice, and the longer style decisions.
 
-### Australian English summary
-
-All article content uses Australian English spelling and conventions.
-
-**Spelling rules:**
-
-| American | Australian | Notes |
-|---|---|---|
-| color, colored | colour, coloured | CSS property names stay `color` |
-| behavior, behavioral | behaviour, behavioural | |
-| organize, organization | organise, organisation | -ize → -ise across the board |
-| customize, customization | customise, customisation | |
-| optimize, optimization | optimise, optimisation | |
-| recognize | recognise | |
-| analyze | analyse | |
-| centralize | centralise | |
-| standardize | standardise | |
-| center (location) | centre | `text-align: center` in CSS stays American |
-| meter | metre | unit of measure; `meter` stays when it means a measuring device |
-| gray | grey | CSS named colour `gray` is valid in code; in prose use `grey` |
-| defense, offense | defence, offence | |
-| license (noun) | licence | "a licence to operate"; verb form `license` stays |
-| practice (verb) | practise | "we practise good security"; noun form `practice` stays |
-| program (broadcast/event) | programme | software stays `program` |
-| fulfill, fulfillment | fulfil, fulfilment | single l |
-| enrollment | enrolment | single l |
-| installment | instalment | single l |
-| traveling, traveled | travelling, travelled | double l |
-| labeled, labeling | labelled, labelling | double l |
-| modeling, modeled | modelling, modelled | double l |
-| dialog (prose) | dialogue | UI control name `dialog box` stays |
-
-**Conventions:**
-
-- **Date format**: `DD/MM/YYYY` numerically, or `8 May 2026` in prose (no comma between day and month).
-- **Currency**: AUD with `$` is fine when context is unambiguous. Use `AUD 50` or `A$50` when comparing to other currencies.
-- **Postal**: "postcode", not "zip code".
-- **Phone**: "mobile" not "cell phone"; "landline" not "home phone" in formal writing.
-- **Quotes**: Use single quotes for inline quoted phrases; double quotes for direct speech.
-
-**Stays American (don't change):**
-
-- CSS property names and values: `color`, `background-color`, `text-align: center`, `border-color`. These are code, not prose.
-- Zendesk product names and UI labels exactly as Zendesk publishes them: "help center" (lowercase, American spelling), "Knowledge admin", "content blocks", "Guide". These are proper nouns.
-- Vendor product names and direct quotes from vendor documentation.
-- URLs, file names, code identifiers, JSON keys.
-- Anything inside `<code>` or `<pre>` tags.
-
-**When in doubt**: if the word would be `-ise` or `-our` or `-re` on an Australian government website (`.gov.au`), use that form.
+The full Australian English rule set lives in `references/style-reference.md`; the audit checklist's section H carries the common offenders. Zendesk-specific exceptions below.
 
 ### Zendesk-specific style exceptions
 
@@ -577,48 +332,3 @@ All article content uses Australian English spelling and conventions.
 - Vendor product names and verbatim vendor-doc quotes stay as published.
 
 ---
-
-## Known failure modes
-
-Every one of these was hit in practice. Ordered from worst to least bad.
-
-| Failure | Cause | Fix |
-|---|---|---|
-| Article saves but renders missing content | Used `<style>`, `<script>`, `<form>`, `<button>`, or other unsafe HTML — stripped from HTTP response with no editor warning | Remove unsafe elements; rely on inline styles and theme CSS |
-| Spacing between elements collapses unexpectedly | Used `margin`/`margin-top`/`margin-bottom` on a non-`<table>` element (e.g. `<div>`, `<h2>`, `<p>`, `<ul>`) — Zendesk's allowed-styles list only permits margin on `<table>`, so it's silently stripped from everything else and the element falls back to theme spacing (often nothing) | Use `padding-top`/`padding-bottom` instead — `padding` is allowed globally on every element |
-| Content silently dropped from output | Skimmed source instead of reading it fully; output omits rows, list items, footnote definitions, or trailing sections | Count items in source vs output before declaring done; explicitly verify the last item from the source is present |
-| Footnote marker present but undefined (or vice versa) | Source has multiple footnote markers; only one was tracked into the output | Search the source for every superscript marker and every footnote-style definition; ensure both ends are paired in the output |
-| Whole article body fails to render in Zendesk template | Output included `<!DOCTYPE>`, `<html>`, `<head>`, `<body>` — Zendesk's wrapper conflicts with these | Output an HTML fragment only; start with a content tag (`<h2>`, `<div>`, `<p>`, etc.) |
-| Article shows duplicate title | Top-level `<h1>` in the article body — Zendesk renders the title automatically from article metadata, so an in-body h1 produces a second copy | Remove the in-body h1; start with `<h2>` for the first section heading |
-| Excessive space between heading and following content | `padding-bottom` set on the heading on top of the theme's natural heading-to-content gap | Remove `padding-bottom` from the heading; the theme provides adequate spacing |
-| Adjustments to `margin-top` on a heading have no visible effect | `margin-top` stripped because the heading isn't a `<table>` | Use `padding-top` instead — allowed on every element |
-| Inline styles partially applied / theme-broken | Used CSS variables (`var(--colour)`) that aren't defined in this scope | Use explicit colour values, not `var(--foo)` |
-| Hover and transition states do nothing | Tried `:hover` or `transition` in inline styles — pseudo-classes can't be expressed inline; `transition` is not in the allowed property list | Remove. If interactivity matters, define classes in the help centre theme |
-| Wide table headers wrap unpredictably and lose alignment | Multi-word headers ("View Only Admin", "Duty Manager") in narrow columns with no `min-width` — columns collapse to 2-character stacks | Add `min-width` to each `<th>`; use `<br>` to wrap multi-word headers onto two lines deliberately |
-| Wide table forces page horizontal scroll | Table is wider than article container with no `overflow-x: auto` wrapper | Wrap the table in `<div style="overflow-x: auto;">`; set `min-width` on `<table>` so the table itself stays at full width when scrolling |
-| First column in wide table has excessive whitespace | First column `min-width` is too generous AND/OR table `min-width` is much larger than the sum of column min-widths, so excess space is distributed (browsers tend to favour the first column) | Reduce first column `min-width` to just-enough for the longest content; reduce table `min-width` so less excess space is distributed |
-| List items lose their indent | `margin-left` on `<ul>` or `<ol>` — stripped because margin is table-only | Use `padding-left: 20px` on the `<ul>`/`<ol>` instead |
-| Embed iframe stripped on save | `<iframe src="...">` pointed at a domain not in Zendesk's allow-list (e.g. self-hosted video, Twitter embed, Codepen) | Use only the allowed embed domains; for other content, link instead of embed |
-| Image broken on render | `<img src="javascript:...">` or `src="ftp://..."` — only `blob`, `data`, `http`, `https` are allowed for `src` | Fix the protocol |
-| Link blocked | `<a href="file://...">` or `href="javascript:...">` is stripped | Use only the allowed protocols: `ftp`, `http`, `https`, `mailto`, `sftp`, `sms`, `tel` |
-| Mystery whitespace / blank lines | Empty `<p>` tags in the source — Zendesk replaces with `<p>&nbsp;</p>` and renders visible blank lines | Remove empty `<p>` tags |
-| `<button>` looks fine in WYSIWYG, missing on save | `<button>` is unsafe HTML; the WYSIWYG may render it but Zendesk strips on save | Use a styled `<a>` or `<span>` instead |
-| Article uses CSS classes not defined anywhere | Author used `<div class="callout">` etc. without defining `.callout` in the theme | Either coordinate with theme owner to add classes, or use inline styles |
-| Output uses unsupported flexbox properties | Inline `display: flex` works, but `gap`, `flex-direction`, `justify-content`, `align-items` are not in the allowed list and stripped — flex container doesn't behave as expected | Use tables for grid-like layouts; or accept that only basic block/inline-block layout is reliable |
-| `cursor: pointer` doesn't appear | `cursor` is not in the Zendesk allowed inline style list | Remove. Cursors set in the help centre theme (e.g. on links) still work |
-| Animation never plays | `animation`, `transition`, `transform` are not in the allowed inline style list | Remove. Static content only — Zendesk articles are not the place for motion |
-| Article missing tag suggestions | Output delivered without the type / content tag and label topics | Always include both: the type tag (`tutorial` / `how-to` / `reference` / `explanation`) and a flat list of 4–8 lowercase-hyphenated label topics. No sub-categorisation. |
-| Article reads as three disconnected things — background, steps, and a definitions table — and readers can't find what they need | Source mixed Diátaxis types and was published as one article | Classify before building; split into separate articles, one per type, cross-linked. See [references/diataxis.md](references/diataxis.md) |
-| Spelling drift on long articles | Mixed Australian and American spellings (e.g. "behaviour" in one paragraph, "behavior" in another) | Pass once over the full output before delivering, searching for `-ize`, `-or` (in `colour`/`behaviour`/etc. positions), `gray`, `center` (outside CSS), `defense`, etc. |
-| Content block HTML behaves differently from article | Different HTML cleanup rules: articles silently drop unsafe HTML, content blocks wrap unsupported HTML in an editable HTML block | Test in the same context as the destination |
-| Callout text becomes invisible in dark mode (looks fine in light) | Inline `background-color` (e.g. `#fffaf0`) survives both modes; theme's `[data-theme="dark"] .article-body p { color: ... !important }` paints `<p>` near-white in dark mode → near-white text on cream background = unreadable | Switch to translucent `rgba()` background so it tints both modes' page surfaces; remove every inline `color` so the theme paints the text. Use the patterns in [references/callout-patterns.md](references/callout-patterns.md). |
-| Table's row-header first column appears as a white block with invisible text in dark mode | Inline `<td style="background-color: #f8fafc">` (or similar light hex) on the first column survives into dark mode; theme paints the cell text near-white via `!important` → white-on-white | Same fix as callouts but applied to `<td>`: switch to `background-color: rgba(0, 0, 0, 0.04)` and strip any inline `color`. Same bug class as the callout failure, different element. |
-| `<th>` header background renders as a white strip in dark mode | Inline `<thead style="background: #f8fafc">` or `<th style="background-color: #f8fafc">` — same root cause as the row-header case | Switch to `background-color: rgba(0, 0, 0, 0.04)` on the `<thead>` or `<th>`. Pair with `color: #999` on header text (a neutral that reads in both modes). |
-| Any element with a hardcoded light `background-color` looks broken in dark mode | `#fffaf0`/`#f8fafc`/`#fafafa`/`#f5f5f7`/`#ffffff`/`white` etc. on `<div>`/`<td>`/`<th>`/`<p>`/`<section>` etc. survive both modes unchanged; theme forces near-white text in dark mode | One rule fixes them all: replace the hardcoded hex with a translucent `rgba()` so the background tints the page surface in whichever mode is active. Strip any companion inline `color` so the theme paints the text. |
-| Inline `color` on a `<p>`/`<li>` appears to do nothing | Theme rule `.article-body p, li, span, td, th { color: ... !important }` outranks plain inline `color` declarations | Remove the inline `color`. Let the theme paint, in mode-appropriate value. |
-| Headings authored at h4 size when intended as h2 | Inline `<h2 style="font-size: 18px; font-weight: 600">` — theme styles `.article-body h2` at the theme's chosen h2 size with `!important`, but the inline font-size sometimes loses silently | Drop inline `font-size`/`font-weight` from headings. Let the theme size them. |
-| `<code>`/`<pre>` background or border looks wrong | Inline `background`/`border` lost to theme `!important` rules on `.article-body :not(pre) > code` and `.article-body pre` | Remove inline styling on `<code>`/`<pre>`; the theme renders them correctly in both modes. |
-| `<blockquote>` looks unstyled or weird | Inline overrides fighting the theme's `<blockquote>` rules | Remove all inline styles from `<blockquote>` and rely on the theme. If the theme leaves `<blockquote>` unstyled, you can style it inline — but check first. |
-| Table borders disappear against dark page background | Inline `border: 1px solid #e2e8f0` — light grey, near-invisible against a dark page background | Use `#999` for inline table borders. True neutral that reads against both light and dark page backgrounds. |
-| Footnote text reads as the wrong colour in one mode | Inline `color: #718096` (or similar) survives both modes but doesn't match either palette | Use `color: #999`. Reads acceptably as muted text in both modes. |
-| Image URL transplant flow is more brittle than expected | Pre-built `<img>` placeholders in source HTML, then tried to swap in real upload URLs after — two-stage flow with several failure points | Paste prose-only, use WYSIWYG **Insert Image** at each spot, then fix alt text and re-add `max-width: 100%; display: block` in source mode |
