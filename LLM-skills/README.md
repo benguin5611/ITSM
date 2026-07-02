@@ -34,6 +34,10 @@ Detects and removes signs of AI-generated writing. Catches em-dashes, negation p
 
 Structured workflow for building defensible business cases — SaaS tools, infrastructure, vendors, services, processes, strategies. Prevents the common failures: discovering requirements too late, comparing options at the wrong level of detail, presenting more options than necessary.
 
+### [jobs-to-be-done/](jobs-to-be-done/)
+
+Write compact Jobs-to-be-Done analyses in the Klement/Christensen Job Story school. Frames a feature around the progress someone is trying to make — the struggle and circumstance, the core job, job stories (When [situation], I want to [motivation], so I can [outcome]), the four forces of progress, emotional and social jobs, and a good/better/best tiering (MVP / MLP / complete) of how fully the job gets served. Leads with the situation rather than a persona, keeps every statement solution-free via a "rebuild test", and enforces a strict example budget so a write-up stays a page or two. Greenfield mode drives requirements; retrospective mode documents as-built behaviour and flags gaps. Bundles a bare → bloated → condensed worked example.
+
 ### [custom-json-schema/](custom-json-schema/)
 
 Build, edit, and audit JSON schemas in any format. Domain knowledge is plugged in via two companion files (`docs-reference.md` for rules, `skeleton-schema.md` for a seed example) — replace those and the skill adapts to whatever schema format you're working with.
@@ -67,7 +71,7 @@ Most skills here are standalone — drop one in and it works. Two are **orchestr
 
 clauding-with-code also draws directly on: rainbow-team-review · owasp-top-10 · write-like-a-human (doc polish)
 
-standalone (no cross-references): knowledge-matrix · help-centre-article · business-case · custom-json-schema
+standalone (no cross-references): knowledge-matrix · help-centre-article · business-case · custom-json-schema · jobs-to-be-done
 ```
 
 A referenced skill is a **preferred tool, not a hard dependency** — if it isn't installed, the orchestrator falls back to a generic pass and names the skill as the tool it would have reached for. The lens skills are equally usable on their own.
