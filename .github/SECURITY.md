@@ -14,7 +14,7 @@ This is a personal toolkit maintained in my spare time. There are no formal rele
 If you've found a security issue, please **do not open a public issue**. Report it privately through one of these channels:
 
 - **Preferred:** GitHub's private vulnerability reporting — use the *Report a vulnerability* button under the **Security** tab of this repo.
-- **Backup:** email me directly @ ben.jackson@infosek.com.au.
+- **Backup:** email me directly @ security@infosek.com.au.
 
 Include enough detail for me to reproduce it: affected file or script, steps, expected vs. actual behaviour, and the impact you think it has. A proof-of-concept is great but not required.
 
