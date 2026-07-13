@@ -38,6 +38,10 @@ Structured workflow for building defensible business cases — SaaS tools, infra
 
 Write compact Jobs-to-be-Done analyses in the Klement/Christensen Job Story school. Frames a feature around the progress someone is trying to make — the struggle and circumstance, the core job, job stories (When [situation], I want to [motivation], so I can [outcome]), the four forces of progress, emotional and social jobs, and a good/better/best tiering (MVP / MLP / complete) of how fully the job gets served. Leads with the situation rather than a persona, keeps every statement solution-free via a "rebuild test", and enforces a strict example budget so a write-up stays a page or two. Greenfield mode drives requirements; retrospective mode documents as-built behaviour and flags gaps. Bundles a bare → bloated → condensed worked example.
 
+### [playwright-demo-recorder/](playwright-demo-recorder/)
+
+Records polished product-demo videos of a local web app programmatically: Playwright drives the UI headless with a synthetic cursor and positioned captions, macOS `say` generates an inline voiceover paced to each caption's narration length, and ffmpeg muxes it all into one voiced mp4. Starts with a mandatory beat-planning phase that derives the demo story from the actual branch diff, approved by the user before any recorder code runs. Carries a clear licence warning: Apple's system voices are personal, non-commercial use only, so anything leaving the machine for a business or public audience needs a licensed TTS swap or the silent opt-out — both are one-function changes.
+
 ### [custom-json-schema/](custom-json-schema/)
 
 Build, edit, and audit JSON schemas in any format. Domain knowledge is plugged in via two companion files (`docs-reference.md` for rules, `skeleton-schema.md` for a seed example) — replace those and the skill adapts to whatever schema format you're working with.
@@ -71,7 +75,7 @@ Most skills here are standalone — drop one in and it works. Two are **orchestr
 
 clauding-with-code also draws directly on: rainbow-team-review · owasp-top-10 · write-like-a-human (doc polish)
 
-standalone (no cross-references): knowledge-matrix · help-centre-article · business-case · custom-json-schema · jobs-to-be-done
+standalone (no cross-references): knowledge-matrix · help-centre-article · business-case · custom-json-schema · jobs-to-be-done · playwright-demo-recorder
 ```
 
 A referenced skill is a **preferred tool, not a hard dependency** — if it isn't installed, the orchestrator falls back to a generic pass and names the skill as the tool it would have reached for. The lens skills are equally usable on their own.
