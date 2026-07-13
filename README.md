@@ -14,6 +14,12 @@ A few principles:
 
 ## Contents
 
+### [docs-kit/](docs-kit/)
+
+Documentation for a solo IT operator's core workflows — the paper stack for onboarding, access management, vendor due diligence, and incident response. Organised by a layer model (Policy → Standard → Process/Procedure → Register → Reference); see the [docs-kit README](docs-kit/README.md) for the full index. Companion to [security-grc-kit](https://github.com/benguin5611/security-grc-kit), which carries the security/GRC-audience half of the same documentation system.
+
+**This is a Department-of-One starting point, not a certified or audit-ready compliance program** — see [docs-kit's disclaimer](docs-kit/README.md#before-you-rely-on-anything-here) before relying on anything in it.
+
 ### [devices/](devices/)
 
 Docs and tooling for the device fleet — workstations, MDM, and anything that runs on a developer's machine. Storage cleanup guides, network diagnostics, SBOM collection, MDM audit and remediation scripts.
@@ -35,4 +41,4 @@ Reusable Claude skills — drop-in compatible with any Anthropic-skills-aware ru
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE).
+Mixed, scoped to content type: the code (`devices/`, `LLM-skills/`) is **MIT** — see [LICENSE](LICENSE). The `docs-kit/` subtree is **CC BY 4.0**, the correct licence family for a prose-and-templates kit — see [docs-kit/README.md](docs-kit/README.md#licensing).
