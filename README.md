@@ -31,6 +31,7 @@ Reusable Claude skills — drop-in compatible with any Anthropic-skills-aware ru
 - **[custom-json-schema](LLM-skills/custom-json-schema/)** — build and audit JSON schemas with pluggable domain documentation
 - **[clauding-with-code](LLM-skills/clauding-with-code/)** — phased build orchestrator for shipping a feature end to end with an AI coding agent, project-agnostic
 - **[meta-code-review](LLM-skills/meta-code-review/)** — orchestrates multiple review lenses against the real code into one human-in-the-loop verdict, with a deterministic dead-code emitter census
+- **[playwright-demo-recorder](LLM-skills/playwright-demo-recorder/)** — record narrated product-demo videos: Playwright drives the UI, macOS `say` generates inline voiceover paced to narration length, ffmpeg muxes one deliverable
 
 ## Licence
 
