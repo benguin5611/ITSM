@@ -29,7 +29,7 @@ Flag: `*`, `latest`, or no lockfile present. Acceptable: `^` and `~` in `package
 
 **Python:**
 ```
-grep -n ">=\|>=" requirements.txt
+grep -n ">=\|~=" requirements.txt
 ```
 Check for `--require-hashes` in pip install commands or hash pinning in requirements.
 
@@ -72,7 +72,7 @@ uses: actions/checkout@v4  # or SHA: actions/checkout@b4ffde65f46336ab88eb53be80
 ```
 grep -rn "\$\{\{.*github\.event\.\(issue\|pull_request\|comment\).*\}\}" .github/workflows/
 ```
-Flag user-controlled event data injected into `run:` steps without sanitization.
+Flag user-controlled event data injected into `run:` steps without sanitisation.
 
 **Secrets in CI:**
 ```

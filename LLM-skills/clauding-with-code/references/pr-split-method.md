@@ -40,4 +40,4 @@ Splitting a long-lived feature branch into reviewable PRs is where code silently
 - **Mind main drift.** `main` moves under you during review. Re-cut the verify branch from current `main` and re-run the gate before declaring done; scope diffs to changed paths when drift is unrelated.
 
 ## Concrete instance
-For the worked N-PR example with real branch names, file counts, and the exact commands used, see `references/project-binding.md`.
+Record your project's worked N-PR instance (branch names, file counts, the exact commands used) in `references/project-binding.md`.

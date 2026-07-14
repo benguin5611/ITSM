@@ -23,7 +23,7 @@ Broken access control is the most prevalent OWASP category. It occurs when users
 ```
 grep -n "app\.(get|post|put|patch|delete)\(" routes/
 ```
-Look for route handlers that lack an authentication/authorization middleware parameter between the path and handler function.
+Look for route handlers that lack an authentication/authorisation middleware parameter between the path and handler function.
 
 Vulnerable:
 ```javascript
@@ -70,7 +70,7 @@ Look for user-controlled URLs passed to HTTP clients without allowlist validatio
 
 ### Python (Django, Flask, FastAPI)
 
-**Missing authorization decorators:**
+**Missing authorisation decorators:**
 ```
 grep -n "def \w\+.*request" views.py
 ```
@@ -134,7 +134,7 @@ Look for routes registered outside authenticated groups or without auth middlewa
 ```
 grep -n "http\.ServeFile\|filepath\.Join.*req"
 ```
-Look for user-controlled paths passed to file-serving functions without sanitization.
+Look for user-controlled paths passed to file-serving functions without sanitisation.
 
 ## General Patterns (All Languages)
 

@@ -148,7 +148,7 @@ Read `references/document-template.md` for the full structure. The target table 
    8.2 Secondary
    8.3 Tertiary
 9. Next steps
-Appendix A - Sources
+10. Sources
 ```
 
 Key principles:

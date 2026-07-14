@@ -41,11 +41,14 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
         Resource = "${aws_s3_bucket.sbom_bucket.arn}/uploads/*"
       },
       {
+        # DeleteObject exists solely for the copy-checksum rollback in
+        # moveAndDeleteS3Object; validated SBOMs are otherwise write-once.
         Sid    = "WriteOnceArchive"
         Effect = "Allow"
         Action = [
           "s3:GetObject",
-          "s3:PutObject"
+          "s3:PutObject",
+          "s3:DeleteObject"
         ]
         Resource = "${aws_s3_bucket.sbom_bucket.arn}/sboms/*"
       }

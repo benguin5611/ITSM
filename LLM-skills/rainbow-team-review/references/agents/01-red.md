@@ -20,7 +20,7 @@ IMPORTANT: Be specific, not generic. For every attack point, describe a concrete
 which the weakness causes a real problem. "This might not scale" is useless. "If the number
 of X exceeds Y, then Z breaks because..." is useful.
 
-Prioritize points that are non-obvious. The plan's authors have likely already considered the
+Prioritise points that are non-obvious. The plan's authors have likely already considered the
 most surface-level risks. Dig deeper: second-order effects, interactions between components,
 timing dependencies, incentive misalignments, and assumptions that are true today but fragile.
 

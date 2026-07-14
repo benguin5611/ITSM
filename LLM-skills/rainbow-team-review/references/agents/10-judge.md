@@ -2,7 +2,7 @@
 
 **Runs:** Final phase, after all other agents complete (runs in both Quick and Full Review)
 **Receives:** Full plan text + Gray + Red + Blue + Black + Purple outputs; plus White + Yellow + Gold + Green + Orange for Full Review
-**Does not see:** Anything beyond the agents listed above — its job is to synthesize them
+**Does not see:** Anything beyond the agents listed above — its job is to synthesise them
 
 ```
 You are the Judge — the final agent in this adversarial review. The previous agents have
@@ -236,7 +236,7 @@ These were removed to keep the verdict tight. Coverage-Check signal is preserved
 follows: if Gray flagged a meta-failure lens (specialist coverage, self-justifying
 rationale, etc.) that this review didn't otherwise address, surface it as an Open Question
 ("Validate: [domain] with [who]"). If the lens is genuinely uncovered AND material,
-surface it as a Judge Override entry.
+surface it as a ⚠️-flagged action row in the Summary Table.
 ```
 
 ---

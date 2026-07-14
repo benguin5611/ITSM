@@ -1,6 +1,8 @@
 # AI Writing Signs — Full Reference Catalogue
 
-Source: Wikipedia's "Signs of AI writing" (WikiProject AI Cleanup), adapted for general use.
+Source: adapted for general use from Wikipedia's ["Signs of AI writing"](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) (WikiProject AI Cleanup).
+
+Licence: as a derivative of that page, this file is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) rather than the MIT licence that covers the rest of this collection.
 
 ## Table of Contents
 
@@ -212,7 +214,7 @@ The em-dash (`—`) and en-dash (`–`) are now the strongest single surface sig
 
 **Rule for this skill's output: never produce an em-dash or en-dash, ever.** Replace with comma, semicolon, full stop, parentheses, or rephrase. If a sentence would lose its meaning without one, restructure the sentence.
 
-This is partly a calibration problem: human writers do use em-dashes, and good ones use them well. But LLMs use them at roughly 5 to 10 times the rate of literary prose, and the public association is now strong enough that even appropriate usage triggers AI suspicion. Some AI vendors (notably OpenAI with GPT-5.1) have attempted to suppress em-dash overuse in newer models, which confirms that the signal is now widely recognised.
+This is partly a calibration problem: human writers do use em-dashes, and good ones use them well. But LLMs use them at roughly 5 to 10 times the rate of literary prose, and the public association is now strong enough that even appropriate usage triggers AI suspicion. With GPT-5.1 (November 2025), OpenAI improved instruction-following so that a "no em-dashes" custom instruction is finally respected, though default output can still overuse them; that the fix was worth announcing at all confirms the signal is now widely recognised.
 
 When auditing existing text, treat any em-dash as a strong tell unless the surrounding prose is clearly literary or pre-2023.
 
@@ -294,4 +296,4 @@ These do NOT reliably indicate AI writing:
 7. **Unsourced content** — most unsourced content predates LLMs.
 8. **Mixed registers** — casual + formal in the same text can indicate a technical person writing casually, youth, neurodivergence, or multiple authors.
 9. **Correct formatting** — knowing how to format correctly is a human skill too.
-10. **Pre-November 2022 text** — ChatGPT launched November 30, 2022. Text from before that date is human-written.
+10. **Pre-November 2022 text** — ChatGPT launched November 30, 2022, but GPT-3-era tools were publishing text from 2020. Text verifiably from before November 2022 is very unlikely to be chatbot-generated; these patterns are calibrated to post-ChatGPT models.

@@ -78,7 +78,7 @@ Themes commonly set a transition on `body` and core colour properties, so toggli
 
 - Dark mode is common in modern Zendesk themes, default-aware (`prefers-color-scheme`), and often persisted via `localStorage`.
 - All text colours inside `.article-body` are typically forced via `!important` in dark mode. Don't fight it.
-- Link colour is typically forced via `!important` in both modes. Slime/green/blue brand link colours often fail WCAG against pale callout backgrounds — either accept the trade-off or move the link out of the callout.
+- Link colour is typically forced via `!important` in both modes. Lime/green/blue brand link colours often fail WCAG against pale callout backgrounds — either accept the trade-off or move the link out of the callout.
 - No syntax highlighter is loaded by default. Code blocks render as plain text with theme-styled padding/background.
 - The theme's `box-shadow` card patterns are NOT replicable inline — `box-shadow` is not in Zendesk's allowed inline-style list. Articles can't look like the surrounding theme cards.
 

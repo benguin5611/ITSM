@@ -8,7 +8,7 @@
 
 <!-- Concrete: what you ran, against what, and what happened.
      Examples:
-       - Ran devices/sbom/collect.sh on my MacBook; verified the upload landed in the test bucket.
+       - Ran devices/sbom/sbom-audit-spdx.sh on my MacBook; verified the upload landed in the test bucket.
        - `terraform plan` against the prod state showed +1 IAM policy, no destroys.
        - `go test ./...` passed locally.
      "It looked fine" and "the linter passed" don't count as a test plan. -->
@@ -17,7 +17,7 @@
 
 <!-- What changes operationally when this merges?
      Examples:
-       - On-device script: collect.sh now also captures Homebrew packages.
+       - On-device script: sbom-audit-spdx.sh now also captures Homebrew packages.
        - Terraform: adds an S3 lifecycle rule; `terraform apply` will modify the bucket in place.
        - Lambda: handler signature unchanged; no redeploy needed.
        - None (docs-only).

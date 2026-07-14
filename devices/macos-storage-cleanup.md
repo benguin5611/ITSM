@@ -14,7 +14,7 @@ This guide explains how to diagnose high disk usage on macOS and reclaim space s
 6. [Developer storage (often 50-200+ GB)](#6-developer-storage-often-50-200-gb)
    - [6.0 Automated cleanup tools](#60-automated-cleanup-tools)
    - [6.1 Language and build tool caches](#61-language-and-build-tool-caches)
-   - [6.2 Build artifacts and dependencies](#62-build-artifacts-and-dependencies)
+   - [6.2 Build artefacts and dependencies](#62-build-artefacts-and-dependencies)
    - [6.3 Package managers and system-level dev stores](#63-package-managers-and-system-level-dev-stores)
    - [6.4 IDE caches and extensions](#64-ide-caches-and-extensions)
 7. [User application caches](#7-user-application-caches)
@@ -87,11 +87,11 @@ User and application growth lives on `/System/Volumes/Data`, so when drilling do
 
 ## 4. What to clean first (priority order)
 
-When low on space, prioritize in this order:
+When low on space, prioritise in this order:
 
 1. **Trash and Downloads** (safest, highest visibility) → Manual cleanup
 2. **Old installers and disk images** (`*.dmg`, `*.pkg`, archives) → Manual cleanup
-3. **Developer build artifacts** (node_modules, __pycache__) → See [§6.2](#62-build-artifacts-and-dependencies)
+3. **Developer build artefacts** (node_modules, __pycache__) → See [§6.2](#62-build-artefacts-and-dependencies)
 4. **Docker / Homebrew / Nix / language tool caches** → See [§6.3](#63-package-managers-and-system-level-dev-stores)
 5. **IDE caches** (VS Code, JetBrains) → See [§6.4](#64-ide-caches-and-extensions)
 6. **Browser and application caches** → See [§7](#7-user-application-caches), [§8.2](#82-system-level-caches)
@@ -182,7 +182,6 @@ du -sh ~/.gradle 2>/dev/null
 **Clean:**
 ```bash
 # Only if not actively doing Android/Java development
-# Use Gradle's own cleanup for project-level: ./gradlew cleanBuildCache
 # WARNING: Deletes all cached dependencies, requires large re-downloads
 # rm -rf ~/.gradle/caches
 ```
@@ -260,8 +259,8 @@ du -sh ~/.opam 2>/dev/null
 
 **Clean:**
 ```bash
-# Removes logs, switch backups, and repository cache (safe)
-opam clean --logs --switch-backups --repo-cache
+# Removes logs, switch backups/build dirs, and repository cache (safe)
+opam clean --logs --switch-cleanup --repo-cache
 ```
 
 #### 6.1.9 C/C++ (Conan)
@@ -344,7 +343,7 @@ du -sh ~/.kotlin 2>/dev/null
 rm -rf ~/.kotlin
 ```
 
-### 6.2 Build artifacts and dependencies
+### 6.2 Build artefacts and dependencies
 
 #### 6.2.1 Python bytecode cache
 
@@ -356,7 +355,7 @@ find ~ -type d -name "__pycache__" -print0 | xargs -0 du -sh 2>/dev/null | sort 
 **Clean:**
 ```bash
 # Removes bytecode cache (safe - auto-regenerated on next run)
-find ~ -type d -name "__pycache__" -exec rm -rf {} \;
+find ~ -type d -name "__pycache__" -prune -exec rm -rf {} \;
 ```
 
 #### 6.2.2 Node.js modules
@@ -476,7 +475,7 @@ du -sh ~/.cache/buf 2>/dev/null
 **Clean:**
 ```bash
 # Removes Buf module cache (safe - will re-download)
-buf registry cache clear
+buf registry cc
 ```
 
 #### 6.3.7 MacPorts
@@ -586,11 +585,14 @@ bun pm cache rm
 
 **Deno:**
 ```bash
-# Identify
-du -sh ~/.deno 2>/dev/null
+# Identify - the module cache lives at DENO_DIR (macOS default
+# ~/Library/Caches/deno; confirm with `deno info`)
+du -sh ~/Library/Caches/deno 2>/dev/null
 
 # Removes Deno module cache (safe - re-downloaded on next import)
-rm -rf ~/.deno/cache
+deno clean
+
+# Note: ~/.deno holds executables from `deno install`, not the cache
 ```
 
 #### 6.3.11 SDKMAN
@@ -666,7 +668,8 @@ du -sh ~/.luarocks 2>/dev/null
 **Clean:**
 ```bash
 # Remove old versions of installed rocks (safe - current versions remain)
-luarocks purge --old-versions
+# --tree is required: purge does not assume a default tree
+luarocks purge --old-versions --tree ~/.luarocks
 
 # WARNING: Removes all user-installed Lua rocks
 # rm -rf ~/.luarocks
@@ -885,7 +888,7 @@ sudo du -sh /Library/Caches/* 2>/dev/null | sort -h
 ```bash
 # IMPORTANT: Close all applications first
 # Review output first - do NOT use wildcard deletion
-# Only delete caches for apps you recognize and have closed
+# Only delete caches for apps you recognise and have closed
 # System-level caches can affect multiple apps
 
 # Safe examples (close Safari/browsers first):
@@ -895,7 +898,7 @@ sudo rm -rf /Library/Caches/org.mozilla.firefox
 # For other caches, research the bundle ID before deleting
 ```
 
-In general, system caches can be cleared safely if the corresponding apps are closed, but deleting the wrong thing under `/Library/Caches` may cause temporary issues. Prefer targeting caches for specific apps you recognize rather than broad wildcard deletion.
+In general, system caches can be cleared safely if the corresponding apps are closed, but deleting the wrong thing under `/Library/Caches` may cause temporary issues. Prefer targeting caches for specific apps you recognise rather than broad wildcard deletion.
 
 ### 8.3 System logs
 

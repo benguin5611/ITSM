@@ -39,9 +39,9 @@ Load this file when the changeset contains `*.tf`, `*.tfvars`, `docker-compose*.
 **Failure:** local state is not shared, not backed up, and has no locking. Concurrent `terraform apply` corrupts it.
 **Check:** every Terraform root module must configure a remote backend with locking. A `terraform.tfstate` committed to the repo is always wrong.
 
-**IN-G6. `count = 0` instead of `for_each` for conditional resources**
-**Failure:** `count`-indexed resources are addressed by index; a count change destroys and recreates the resource. `for_each` addresses by key and handles conditional presence without replacement.
-**Check:** conditional resources must use `for_each = var.enable ? toset(["x"]) : toset([])`, not `count = var.enable ? 1 : 0`.
+**IN-G6. Multi-element `count` lists where membership can change**
+**Failure:** `count`-indexed resources are addressed by index, so removing or reordering an element in a `count > 1` list shifts every later index and Terraform destroys and recreates those resources. This does not apply to a single conditional resource: `count = var.enable ? 1 : 0` is HashiCorp's documented conditional idiom, has only index `[0]`, and toggling it to 0 destroys the resource by intent, not as a side effect.
+**Check:** lists of similar resources whose membership can change must use `for_each` (key-stable addressing). `count` is fine for identical replicas and for the 0/1 conditional toggle; prefer `for_each` there only for honest reasons (key-stable addressing if it may later grow past one element), never because the toggle itself causes replacement.
 
 **IN-G7. Missing encryption at rest or in transit**
 **Failure:** data stored without encryption is exposed on disk compromise; data in transit without TLS is exposed to interception.

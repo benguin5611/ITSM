@@ -13,7 +13,7 @@
 //   NO filesystem access, so config cannot be read from a file: pass it via args, or bake it into a
 //   copy of this script (the harness persists every invocation's script under the session directory).
 //
-// args (all optional; supply what the pass needs):
+// args (repo and artefact required; the rest optional — supply what the pass needs):
 //   artefact           path to the artefact under review (spec / test-suite / design)
 //   codemap            path to the freshly-regenerated, spot-checked code map (ground truth)
 //   repo               repo root the agents may read (root strictly inside it)
@@ -42,7 +42,7 @@ export const meta = {
   ],
 }
 
-// ---- §5a NO SILENT HANG — load-bearing guards (battle-tested). ----
+// ---- NO SILENT HANG (SKILL.md) — load-bearing guards (battle-tested). ----
 // withDeadline bounds any promise; inside parallel()/pipeline() a rejection becomes null and the
 // barrier proceeds. critical() bounds a sequential single-point-of-failure step, retries ONCE,
 // then aborts LOUDLY with a resume hint rather than hanging silently.
@@ -90,7 +90,7 @@ const FOCUS = A.focus ? ('\n\nPRIORITY SURFACE: ' + A.focus) : ''
 const GROUND = [
   'You are a sub-agent in a grounded meta-code-review. CODE WINS: the running code under ' + REPO + ' is the source of truth; the artefact lags it. Describe what IS; never fabricate; cite file:line.',
   'Artefact under review: ' + ARTEFACT,
-  'Ground-truth code map (spot-checked): ' + CODEMAP,
+  CODEMAP ? ('Ground-truth code map (spot-checked): ' + CODEMAP) : '',
   PRIORS ? ('Prior decisions — settled, do not re-litigate: ' + PRIORS) : '',
   DOMAIN_OVERLAYS.length ? ('Domain overlays — read and apply before reviewing: ' + DOMAIN_OVERLAYS.join(', ')) : '',
   'Root every read strictly inside ' + REPO + '.' + FOCUS,
@@ -212,7 +212,7 @@ const changePlan = await critical('synthesise-plan', SYNTHESIS_DEADLINE_MS, () =
   + '## Change list\n| id | target section | action (ADD / CORRECT / REMOVE / PRESERVE) | what changes |\n\n'
   + '## ROI pass\nFor every proposed test requirement: | requirement | Gate A (feature built at HEAD? Y/N) | Gate B (behavioural/security value? Y/N) | KEEP or DISCARD + reason |\n\n'
   + '## Open items\nBullet list of items needing a human decision before the next version is final.\n\n'
-  + 'Artefact: ' + ARTEFACT + '  Code map: ' + CODEMAP,
+  + 'Artefact: ' + ARTEFACT + (CODEMAP ? ('  Code map: ' + CODEMAP) : ''),
   { label: 'synthesise-plan', phase: 'Synthesis' }))
 
 const synth = await critical('synthesise-author', SYNTHESIS_DEADLINE_MS, () => agent(
@@ -221,7 +221,7 @@ const synth = await critical('synthesise-author', SYNTHESIS_DEADLINE_MS, () => a
   + '\n\nRULES: PRESERVE correct content verbatim with its id; ADD with fresh non-colliding ids + coverage rows; recompute Counts ACCURATELY (requirement bullets == coverage rows; no duplicate ids); no open-questions section in the artefact — open items are in the plan above and belong in your return summary only; append Changelog + Requirements-coverage map + dead-code appendix. House language/style.\n\n'
   + 'Write the COMPLETE next version to ' + OUTDIR + '/artefact-next.md and a concise memo to ' + OUTDIR + '/changeset.md.\n'
   + 'Return ONLY (<250 words): the two output paths; before/after requirement counts; change-class tally; ROI-pass prune count (evaluated N / no-feature E / low-ROI F / kept K); open items verbatim from the plan.\n\n'
-  + 'Artefact: ' + ARTEFACT + '  Code map: ' + CODEMAP,
+  + 'Artefact: ' + ARTEFACT + (CODEMAP ? ('  Code map: ' + CODEMAP) : ''),
   { label: 'synthesise-author', phase: 'Synthesis' }))
 
 return { securitySynthesis: sec && sec.synthesis, deadCandidates, grudge: grudgeOut, synthSummary: synth }

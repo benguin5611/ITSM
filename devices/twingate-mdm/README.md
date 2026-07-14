@@ -51,7 +51,7 @@ Designed to plug into any MDM that supports a compliance check + remediation pat
 ## Limits
 
 - Zombie utun adapters still exist in kernel space after mitigation. Only a reboot truly clears them.
-- Zombie detection only matches utuns with MTU 1380 (Twingate's documented default) and no IPv4. MTU 1500 zombies aren't auto-mitigated — too many other macOS services use that MTU (iCloud Private Relay, generic VPNs). Reboot clears them for free.
+- Zombie detection only matches utuns with MTU 1380 (the MTU the Twingate macOS client sets on its utun, verified on-device; Twingate doesn't publicly document it) and no IPv4. MTU 1500 zombies aren't auto-mitigated — too many other macOS services use that MTU (iCloud Private Relay, generic VPNs). Reboot clears them for free.
 - No uninstaller. Remove with `sudo chflags nouchg /Library/LaunchAgents/com.twingate.macos.plist && sudo rm /Library/LaunchAgents/com.twingate.macos.plist && launchctl bootout gui/$(id -u)/com.twingate.macos`.
 
 ## Status

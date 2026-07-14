@@ -75,8 +75,10 @@ structure come from the repos — never hardcode a name, handle, product, or rep
 For each repo, harvest the full corpus (authors, changed-file paths, labels, reviews, **every**
 comment/review/inline body) into `raw/<repo>.ndjson`:
 - **Team:** `scripts/harvest.sh all <owner> <repo> raw/<repo>.ndjson`
-- **Self:** `scripts/harvest.sh search <owner> <repo> raw/<repo>.me.ndjson "author:<login>"` and
-  again with `"reviewed-by:<login>"` and `"commenter:<login>"` (the harvester de-dupes by number).
+- **Self:** run three searches, each into its own file: `scripts/harvest.sh search <owner> <repo> raw/<repo>.me.ndjson "author:<login>"`,
+  then the same with `raw/<repo>.rev.ndjson "reviewed-by:<login>"` and `raw/<repo>.cmt.ndjson "commenter:<login>"`.
+  (`harvest.sh` truncates its output file on start, so reusing one file would keep only the last search;
+  `analyze.py` and `digest.py` both de-dupe the overlap across the three files by PR number.)
 - Run the big repo in the background; the small ones in the foreground.
 - **Verify completeness:** compare `wc -l raw/<repo>.ndjson` against the `gh pr list … --jq length`
   count. If a paged harvest stopped early (GraphQL complexity/timeout), backfill the missing numbers
@@ -156,9 +158,10 @@ upskilling targets. Offer to re-run periodically to track movement.
 
 ## Updating this skill
 The discipline set defaults to a generic, language-agnostic taxonomy and is normally tailored per run
-via `config.json` (Phase 1). To change the built-in defaults for a different kind of codebase, retarget
-codebase, edit `scripts/discmap.py` (`DISCIPLINES`, `REPO_BASE`, `map_path`) and
+by taxonomy discovery (Phase 2.5 writes `taxonomy.discovered.json`, which `discmap.py` auto-merges;
+keys set explicitly in `config.json` still win). To retarget the built-in fallback defaults at a
+different kind of codebase, edit `scripts/discmap.py` (`DEFAULT_DISCIPLINES`, `DEFAULT_PATH_RULES`,
+`DEFAULT_LANG_RULES`, plus the `repo_base` config key and `map_path` closure in `build_mapper`) and
 [references/discipline-mapping.md](references/discipline-mapping.md) together, and adjust the column
-groups in `render.py`/`report.py`. After any change, follow the skill-sync convention: push to the
-canonical repo, sync to `~/.claude/skills/`, regenerate the Downloads ZIP. Keep the skill
-identity-free — verify with a grep against any real handle list before committing.
+groups in `render.py`/`report.py`. After any change, re-install the updated folder into your skills
+directory. Keep the skill identity-free: verify with a grep against any real handle list before committing.

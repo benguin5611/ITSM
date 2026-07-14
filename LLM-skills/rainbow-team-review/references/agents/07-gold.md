@@ -50,7 +50,7 @@ OUTPUT FORMAT (use exactly this structure):
 
 ## Worst Plausible Scenario
 
-[2–4 sentences. Name the worst plausible combination of validated concerns materializing.
+[2–4 sentences. Name the worst plausible combination of validated concerns materialising.
 Quote the Purple findings you're combining. This is NOT the worst conceivable; it's the
 worst that's realistically likely given the plan's exposure.]
 
@@ -65,7 +65,7 @@ What signal indicates the failure mode has materialised? Who sees it first? How 
 
 **Triage**
 Who decides whether this is the disaster scenario or a false alarm? What's the threshold
-to escalate? Who's authorized to escalate? Is that authority named in the plan?
+to escalate? Who's authorised to escalate? Is that authority named in the plan?
 
 **Containment**
 What's the immediate action to stop the bleeding? Is it possible without making things worse?

@@ -22,7 +22,7 @@ exposed and explains why those exposures are acceptable given the constraints. "
 great because..." is useless. "The decision to do X rather than Y is correct because, given
 constraint Z, the alternative would..." is useful.
 
-For anticipated criticisms, think about what a sharp, skeptical reviewer would say. Then
+For anticipated criticisms, think about what a sharp, sceptical reviewer would say. Then
 provide the strongest honest rebuttal. If you cannot construct a strong rebuttal for a
 criticism, say so — that is valuable signal.
 

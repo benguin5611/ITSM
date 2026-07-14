@@ -6,6 +6,10 @@
 //   parallel(thunks)    -> Promise<any[]>     run thunks concurrently, await all
 //   phase(title)        -> void               mark a pipeline phase (for the UI/log)
 //   log(msg)            -> void               structured log line
+//   args                -> object|undefined   invocation arguments injected at launch
+//                                             (may be undefined, so guard every read)
+// The runtime wraps the script body, so top-level await works and a final
+// top-level `return` hands the run summary back to the caller.
 //
 // The shape mirrors a typical multi-agent review workflow script. The pipeline
 // here is deliberately tiny — a PLANNER decides a partition, a waved WRITER fan-out

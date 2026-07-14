@@ -11,8 +11,8 @@ This category focuses on code and infrastructure that does not protect against i
 | CWE-426 | Untrusted Search Path |
 | CWE-494 | Download of Code Without Integrity Check |
 | CWE-502 | Deserialization of Untrusted Data |
-| CWE-565 | Reliance on Cookies without Validation or Integrity Checking |
-| CWE-784 | Reliance on Cookies without Validation in Security Decision |
+| CWE-565 | Reliance on Cookies without Validation and Integrity Checking |
+| CWE-784 | Reliance on Cookies without Validation and Integrity Checking in a Security Decision |
 | CWE-830 | Inclusion of Web Functionality from Untrusted Source |
 
 ## Detection Patterns
@@ -113,7 +113,7 @@ grep -rn "cookie\|Cookie" --include="*.js" --include="*.ts" --include="*.py" --i
 Check that security-sensitive cookies:
 - Are signed (HMAC or equivalent)
 - Have `httpOnly`, `secure`, `sameSite` attributes
-- Are not used for authorization decisions without server-side validation
+- Are not used for authorisation decisions without server-side validation
 
 ### Auto-Update Without Verification
 

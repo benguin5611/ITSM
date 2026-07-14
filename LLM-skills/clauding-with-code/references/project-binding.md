@@ -46,7 +46,7 @@ Restate the local policies the run must obey, e.g.:
 
 ## Worked instances — each generic lesson, as it actually bit
 
-This is the concrete companion to `references/anti-patterns.md` (A1–A21) and to the lifecycle phases. Leave it empty until the method bites your project — then record each lesson **as it actually happened here**, one short entry per anti-pattern, so the next run on this project inherits the hard-won specifics.
+This is the concrete companion to `references/anti-patterns.md` (A1–A22) and to the lifecycle phases. Leave it empty until the method bites your project — then record each lesson **as it actually happened here**, one short entry per anti-pattern, so the next run on this project inherits the hard-won specifics.
 
 For each entry, capture: which anti-pattern it instances, what you assumed, how the real environment differed, and the fix. A worked instance is worth more than the generic rule because it names the exact coupling, command, or contract that bit *on this project*.
 

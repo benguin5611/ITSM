@@ -6,7 +6,7 @@ Source: https://support.zendesk.com/hc/en-us/articles/6644509092378-Supported-HT
 
 ## The single biggest gotcha
 
-**`margin` and all `margin-*` properties are only allowed on `<table>` elements.** On every other element (`<div>`, `<h1>`–`<h6>`, `<p>`, `<ul>`, `<ol>`, `<section>`, etc.) they are silently stripped, and the element falls back to whatever spacing the help center theme provides.
+**`margin` and all `margin-*` properties are only allowed on `<table>` elements.** On every other element (`<div>`, `<h1>`–`<h6>`, `<p>`, `<ul>`, `<ol>`, `<section>`, etc.) they are silently stripped, and the element falls back to whatever spacing the help centre theme provides.
 
 To add space around non-table elements, use `padding-top` or `padding-bottom` instead — `padding` is globally allowed on every element. To indent a list, use `padding-left: 20px` on the `<ul>`/`<ol>`, not `margin-left`.
 
@@ -121,7 +121,7 @@ These are common in modern CSS but **are stripped** from inline styles:
 
 ## Notes on what *is* allowed
 
-`overflow-x` and `overflow-y` are not explicitly listed in the global allowed properties but `overflow: auto` (set via the shorthand or via `display`) appears to work in practice on `<div>` wrappers — this is how the wide-table scrolling pattern works. If a future Zendesk update strips it, the table simply collapses (graceful degradation).
+`overflow-x` and `overflow-y` are not explicitly listed in the global allowed properties, but `overflow-x: auto` (the property the wide-table scrolling pattern uses) appears to work in practice on `<div>` wrappers. If a future Zendesk update strips it, the table simply collapses (graceful degradation).
 
 `display: flex` and `display: grid` are technically allowed (because `display` is in the global list), but **none of the flex/grid alignment properties are** — so these are largely useless for layout. Use tables, block layout, or `inline-block` instead.
 
@@ -138,5 +138,5 @@ These are common in modern CSS but **are stripped** from inline styles:
 | Flex/grid layout | `<table>` |
 | `gap` between flex children | `padding` on each child |
 | `box-shadow` | `border` |
-| `cursor: pointer` on hoverable elements | Not expressible inline. Define a class in the help center theme |
-| `:hover` styling | Not expressible inline. Define a class in the help center theme |
+| `cursor: pointer` on hoverable elements | Not expressible inline. Define a class in the help centre theme |
+| `:hover` styling | Not expressible inline. Define a class in the help centre theme |

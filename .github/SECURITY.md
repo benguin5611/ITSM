@@ -25,7 +25,7 @@ This is a side project run by one person, so timelines are best-effort rather th
 - **Acknowledgement:** within about 5 business days.
 - **Initial triage:** within about 14 days — I'll let you know whether I'm treating it as a vulnerability, a regular bug, or something I won't fix, and why.
 - **Fix or decision:** depends on severity and complexity. Critical issues get prioritised; low-severity issues may sit for a while or end up as documented limitations.
-- **Disclosure:** once a fix is merged (or I've decided not to fix), I'm happy to credit you in the commit message or release notes if you'd like. Please don't publicly disclose before then.
+- **Disclosure:** once a fix is merged (or I've decided not to fix), I'm happy to credit you in the commit message if you'd like. Please don't publicly disclose before then.
 
 ### Scope
 

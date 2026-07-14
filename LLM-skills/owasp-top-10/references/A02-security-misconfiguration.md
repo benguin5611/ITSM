@@ -6,7 +6,7 @@ Security misconfiguration is the most common issue in cloud and web applications
 
 | CWE | Name |
 |-----|------|
-| CWE-2 | Environmental Security Flaws |
+| CWE-2 | 7PK - Environment |
 | CWE-11 | ASP.NET Misconfiguration |
 | CWE-16 | Configuration |
 | CWE-209 | Information Exposure Through an Error Message |

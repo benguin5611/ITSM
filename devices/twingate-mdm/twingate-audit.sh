@@ -12,8 +12,9 @@
 #   - ProgramArguments missing or wrong path
 #   - KeepAlive not scoped correctly (must be a dict with Crashed=true,
 #     not unconditional true — see twingate-remediate.sh for rationale)
-#   - More than one Twingate-shaped utun present (zombie adapters from
-#     Twingate's kill/respawn behaviour; only a reboot fully clears them)
+#   - Unmitigated zombie utun present: up, no IPv4 address, MTU 1380
+#     (adapters left behind by Twingate's kill/respawn behaviour;
+#     twingate-remediate.sh brings them admin-down, a reboot removes them)
 #
 # Diagnostic bypass:
 #   If /var/db/.twingate-diag-bypass exists and is < 10 minutes old, this
@@ -60,11 +61,24 @@ if ! /usr/libexec/PlistBuddy -c "Print :KeepAlive:Crashed" "$PLIST" 2>/dev/null 
 fi
 
 # --- Zombie utun check ---
-# More than one 100.x interface = accumulated zombies. Only a reboot
-# fully clears them; twingate-remediate.sh can mitigate routing impact.
-TWINGATE_UTUNS=$(ifconfig | awk '/^utun/{name=$1; sub(":","",name)} /inet 100\./{print name}' | wc -l | tr -d ' ')
-if [[ "$TWINGATE_UTUNS" -gt 1 ]]; then
-    echo "Zombie utun adapters detected ($TWINGATE_UTUNS active) — reboot required"
+# Detects the same population twingate-remediate.sh mitigates: utuns that
+# are still up with no IPv4 address and Twingate's observed default MTU of
+# 1380. The active tunnel (and any other live VPN, e.g. Tailscale) has an
+# IPv4 address so it never matches, and adapters remediation has already
+# brought admin-down are no longer up, so a remediated machine reports
+# compliant. Only a reboot removes zombies from the kernel entirely.
+ZOMBIE_UTUNS=0
+for iface in $(ifconfig -lu | tr ' ' '\n' | grep '^utun'); do
+    if ifconfig "$iface" 2>/dev/null | grep -qE "^[[:space:]]+inet [0-9]"; then
+        continue
+    fi
+    MTU=$(ifconfig "$iface" 2>/dev/null | awk '/mtu/ {for(i=1;i<=NF;i++) if($i=="mtu") print $(i+1)}')
+    if [[ "$MTU" == "1380" ]]; then
+        ZOMBIE_UTUNS=$((ZOMBIE_UTUNS + 1))
+    fi
+done
+if [[ "$ZOMBIE_UTUNS" -gt 0 ]]; then
+    echo "Zombie utun adapters detected ($ZOMBIE_UTUNS unmitigated) — remediation or reboot required"
     exit 1
 fi
 

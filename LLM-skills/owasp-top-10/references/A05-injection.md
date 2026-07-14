@@ -1,6 +1,6 @@
 # A05:2025 — Injection
 
-Injection flaws occur when untrusted data is sent to an interpreter as part of a command or query. Attacker-supplied data can trick the interpreter into executing unintended commands or accessing data without authorization. This category covers SQL, NoSQL, OS command, LDAP, XSS, and template injection.
+Injection flaws occur when untrusted data is sent to an interpreter as part of a command or query. Attacker-supplied data can trick the interpreter into executing unintended commands or accessing data without authorisation. This category covers SQL, NoSQL, OS command, LDAP, XSS, and template injection.
 
 ## CWE Mappings
 
@@ -132,7 +132,7 @@ Grep patterns:
 innerHTML|outerHTML|document\.write\(
 dangerouslySetInnerHTML
 v-html
-\{\{!\s|{!!.*!!}
+\{\{\{|{!!.*!!}
 \|safe\b|\|raw\b|\|noescape\b
 ```
 
@@ -162,7 +162,9 @@ return render_template_string(user_template)
 ```
 Secure:
 ```python
-# Jinja2 auto-escapes by default in templates (not render_template_string)
+# Flask auto-escapes variables in render_template AND render_template_string;
+# the danger above is user input as the template source itself (SSTI).
+# Plain Jinja2 does not auto-escape unless autoescape=True.
 return render_template('page.html', variable=user_input)
 # Django — don't use |safe with user input
 {{ variable }}
@@ -197,10 +199,12 @@ db.users.find({ username: req.body.username, password: req.body.password });
 ```
 Secure:
 ```javascript
-// Validate and sanitize input types
+// Coerce inputs to strings so operator objects can't get through
 const username = String(req.body.username);
 const password = String(req.body.password);
-db.users.find({ username, password: await bcrypt.hash(password, 12) });
+// Fetch by username only, then verify against the stored hash
+const user = await db.users.findOne({ username });
+const valid = user && (await bcrypt.compare(password, user.passwordHash));
 ```
 
 ### LDAP Injection
@@ -225,5 +229,5 @@ Velocity\.evaluate\(|freemarker.*\$\{
 - `innerHTML` setting static content or content from trusted sources (not user input)
 - ORM methods like `.find()`, `.findOne()`, `.where()` with object syntax (not string concatenation) are generally safe
 - SQL in migration files or seed scripts typically uses hardcoded values
-- `dangerouslySetInnerHTML` with content from a sanitization library (DOMPurify) is the intended pattern
+- `dangerouslySetInnerHTML` with content from a sanitisation library (DOMPurify) is the intended pattern
 - Template rendering with file-based templates (not string-based) auto-escapes by default in most frameworks

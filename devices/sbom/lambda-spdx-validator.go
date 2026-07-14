@@ -298,7 +298,7 @@ func handleFunctionURL(ctx context.Context, request events.LambdaFunctionURLRequ
 	resp := PresignedURLResponse{
 		UploadURL:     presignResult.URL,
 		S3Key:         key,
-		ExpiresIn:     int(presignExpiryDuration),
+		ExpiresIn:     int(presignExpiryDuration.Seconds()),
 		CorrelationID: correlationID,
 	}
 
@@ -378,10 +378,13 @@ func handleS3Event(ctx context.Context, event events.S3Event) (string, error) {
 			}
 		}
 
-		// Re-sanitize device ID (defense against direct S3 writes bypassing presign)
+		// Re-sanitize device ID (defence against direct S3 writes bypassing presign).
+		// Keep the raw value for the rejection log; after sanitisation the
+		// variable only ever holds the "unknown" constant on this path.
+		rawDeviceID := deviceID
 		if deviceID = sanitizeDeviceID(deviceID); deviceID == unknownDeviceID {
 			slog.Error("You shall not pass",
-				"device_id", deviceID,
+				"device_id", truncate(rawDeviceID, maxDeviceIDLen),
 				"correlation_id", correlationID)
 			continue
 		}
@@ -445,7 +448,8 @@ func downloadS3Object(ctx context.Context, bucket, key string) ([]byte, map[stri
 		}
 	}()
 
-	// Read body with size limit (100 MB - S3 limit, not Function URL limit)
+	// Cap the body read at 75 MB. Uploads arrive via presigned S3 PUT, so
+	// the Function URL payload limit does not apply here.
 	const maxBodySize = 75 * 1024 * 1024
 	limitedReader := io.LimitReader(result.Body, maxBodySize+1)
 	body, err := io.ReadAll(limitedReader)
@@ -554,6 +558,14 @@ func validateS3Object(ctx context.Context, body []byte, metadata map[string]stri
 	if doc.Name == "" {
 		return fmt.Errorf("name is required")
 	}
+
+	// Cap document-level field lengths to prevent abuse
+	if len(doc.Name) > 500 {
+		return fmt.Errorf("document name too long: %d chars (max 500)", len(doc.Name))
+	}
+	if len(doc.DocumentNamespace) > 2048 {
+		return fmt.Errorf("documentNamespace too long: %d chars (max 2048)", len(doc.DocumentNamespace))
+	}
 	if doc.DataLicense == "" {
 		slog.Warn("dataLicense is empty (should be CC0-1.0)",
 			"device_id", deviceID,
@@ -582,6 +594,9 @@ func validateS3Object(ctx context.Context, body []byte, metadata map[string]stri
 		}
 		if len(pkg.SPDXID) > 500 {
 			return fmt.Errorf("package[%d] SPDXID too long: %d chars (max 500)", i, len(pkg.SPDXID))
+		}
+		if len(pkg.DownloadLocation) > 2048 {
+			return fmt.Errorf("package[%d] downloadLocation too long: %d chars (max 2048)", i, len(pkg.DownloadLocation))
 		}
 	}
 

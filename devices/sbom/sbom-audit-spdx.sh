@@ -5,6 +5,8 @@
 # Usage:
 #   sbom-audit-spdx                    # Production mode (monthly upload to Lambda)
 #   sbom-audit-spdx --test             # Test mode (local output)
+#   sbom-audit-spdx --test-upload      # Test mode + upload to Lambda
+#   sbom-audit-spdx --force            # Force production run (bypass monthly check)
 #   sbom-audit-spdx clean INPUT OUT    # Clean SPDX file for conversion
 #   sbom-audit-spdx --help             # Show help
 #
@@ -25,7 +27,9 @@ _kc_lookup() {
 : "${SBOM_LAMBDA_URL:=$(_kc_lookup SBOM_LAMBDA_URL)}"
 : "${SBOM_AUTH_TOKEN:=$(_kc_lookup SBOM_AUTH_TOKEN)}"
 : "${SBOM_PRESIGN_SECRET:=$(_kc_lookup SBOM_PRESIGN_SECRET)}"
-export SBOM_LAMBDA_URL SBOM_AUTH_TOKEN SBOM_PRESIGN_SECRET
+# Deliberately NOT exported: only this shell reads them. Exporting would hand
+# the auth token and HMAC secret to every child process the script spawns
+# (syft, jq, brew, the remotely fetched Homebrew installer, ...).
 unset _sbom_kc _sbom_acct
 unset -f _kc_lookup
 
@@ -35,7 +39,7 @@ set -euo pipefail
 # Lambda URL - must be set via SBOM_LAMBDA_URL environment variable
 LAMBDA_URL="${SBOM_LAMBDA_URL:-}"
 
-# Device ID (from hostname, sanitized to prevent header injection / path traversal)
+# Device ID (from hostname, sanitised to prevent header injection / path traversal)
 DEVICE_ID="${HOSTNAME:-$(hostname)}"
 DEVICE_ID="${DEVICE_ID//[^a-zA-Z0-9._-]/}"
 if [ -z "$DEVICE_ID" ]; then
@@ -94,7 +98,7 @@ safe_delete_file() {
 		rm -f "$file_path"
 		return 0
 	else
-		echo "✗ SAFETY: Refusing to delete unrecognized file pattern: $file_path" >&2
+		echo "✗ SAFETY: Refusing to delete unrecognised file pattern: $file_path" >&2
 		return 1
 	fi
 }
@@ -171,7 +175,7 @@ if [ "${1:-}" = "clean" ]; then
             .documentDescribes |= map(select(IN($file_ids[]) | not))
             | if .documentDescribes == [] then del(.documentDescribes) else . end
         else . end |
-        # Deduplicate hasExtractedLicensingInfos (case-sensitive, no normalization)
+        # Deduplicate hasExtractedLicensingInfos (case-sensitive, no normalisation)
         if .hasExtractedLicensingInfos then
             .hasExtractedLicensingInfos |= (group_by(.licenseId) | map(.[0]))
         else . end |
@@ -204,7 +208,7 @@ if [ "${1:-}" = "clean" ]; then
 	echo "  Original size: $ORIG_FMT"
 	echo "  Cleaned size: $NEW_FMT"
 	echo "  Packages: $PKG_COUNT"
-	echo "  Licenses: $LICENSE_COUNT (deduplicated)"
+	echo "  Licences: $LICENSE_COUNT (deduplicated)"
 	echo "  Removed: files[], licenseInfoFromFiles, packageVerificationCode, hasFiles, cpe23Type refs"
 	echo ""
 	echo "✓ Output saved to: $CLEAN_OUTPUT"
@@ -251,7 +255,7 @@ Production Mode:
   - Creates monthly marker file
 
 Test Mode (--test):
-  - Outputs to $TMPDIR/sbom-test-TIMESTAMP/ (or /tmp if TMPDIR not set)
+  - Outputs to a private mktemp directory under $TMPDIR (or /tmp), named sbom-test-XXXXXX
   - Scans Homebrew Cellar directory only for speed
   - Skips upload to Lambda
   - Preserves all intermediate files
@@ -259,13 +263,13 @@ Test Mode (--test):
 
 Test Upload Mode (--test-upload):
   - Same as --test but also uploads to Lambda
-  - Requires SBOM_LAMBDA_URL and SBOM_AUTH_TOKEN
+  - Requires SBOM_LAMBDA_URL, SBOM_AUTH_TOKEN and SBOM_PRESIGN_SECRET
   - Useful for testing the full end-to-end flow
 
 Force Mode (--force):
   - Runs production mode even if already run this month
   - Useful for manual re-runs or troubleshooting
-  - Requires SBOM_LAMBDA_URL and SBOM_AUTH_TOKEN
+  - Requires SBOM_LAMBDA_URL, SBOM_AUTH_TOKEN and SBOM_PRESIGN_SECRET
 
 Clean Utility (clean):
   - Standalone utility to clean existing SPDX files
@@ -277,8 +281,10 @@ Clean Utility (clean):
   - Works independently of production/test modes
 
 Environment Variables:
-  SBOM_LAMBDA_URL - Lambda Function URL (required for production mode, set via MDM)
-  SBOM_AUTH_TOKEN - Authentication token (required for production mode, set via MDM)
+  SBOM_LAMBDA_URL     - Lambda Function URL (required for production mode, set via MDM)
+  SBOM_AUTH_TOKEN     - Authentication token (required for production mode, set via MDM)
+  SBOM_PRESIGN_SECRET - HMAC secret for signing uploads (required whenever an upload
+                        happens: production, --force and --test-upload)
 
 Examples:
   # Monthly production run (via MDM)
@@ -288,7 +294,8 @@ Examples:
   sbom-audit-spdx --test
 
   # Test end-to-end flow (generate + upload)
-  SBOM_LAMBDA_URL='https://...' SBOM_AUTH_TOKEN='...' sbom-audit-spdx --test-upload
+  SBOM_LAMBDA_URL='https://...' SBOM_AUTH_TOKEN='...' SBOM_PRESIGN_SECRET='...' \
+    sbom-audit-spdx --test-upload
 
   # Clean SPDX file for conversion
   sbom-audit-spdx clean input.spdx.json cleaned.spdx.json
@@ -309,14 +316,14 @@ if [ "$FORCE_RUN" = "true" ] && [ "$MODE" != "test" ]; then
 	echo "⚠ Force mode enabled - bypassing monthly throttle check"
 fi
 
-# Set working directory based on mode. The `-m 700` applies to the leaf
-# directory; parent dirs ($TMPDIR or $HOME) are pre-existing and not our
-# concern, so SC2174's caveat doesn't apply here.
+# Set working directory based on mode.
 if [[ "$MODE" == test* ]]; then
-	# Use tmpdir for test output to avoid hardcoding user paths
-	TEST_OUTPUT_DIR="${TMPDIR:-/tmp}/sbom-test-${TIMESTAMP}"
-	# shellcheck disable=SC2174
-	mkdir -p -m 700 "$TEST_OUTPUT_DIR"
+	# mktemp -d creates the directory 0700 with O_EXCL. A predictable
+	# timestamp-named path under /tmp could be pre-created by another local
+	# user (mkdir -p would silently adopt it, without applying -m 700), who
+	# could then plant symlinks at the output filenames the script writes
+	# through. Same reasoning as the mktemp use in the clean subcommand.
+	TEST_OUTPUT_DIR=$(mktemp -d "${TMPDIR:-/tmp}/sbom-test-XXXXXX")
 	SBOM_DIR="$TEST_OUTPUT_DIR"
 else
 	SBOM_DIR="${HOME}/.sbom-audit"
@@ -326,6 +333,8 @@ else
 		echo "    sudo chown -R \$(whoami):staff \"$SBOM_DIR\"" >&2
 		exit 1
 	fi
+	# The `-m 700` applies to the leaf directory; the parent ($HOME) is
+	# pre-existing and not our concern, so SC2174's caveat doesn't apply.
 	# shellcheck disable=SC2174
 	mkdir -p -m 700 "$SBOM_DIR"
 fi
@@ -375,7 +384,16 @@ detect_brew() {
 		return 1
 	fi
 
-	export PATH="${prefix}/bin:${prefix}/sbin:${PATH}"
+	# Prepend the prefix to PATH only when executing from it directly is
+	# safe. A vanilla Homebrew prefix is writable by the console user, so
+	# putting it on root's PATH would let that user plant binaries (curl,
+	# jq, even awk) that root then executes on the next run. Root + vanilla
+	# Homebrew instead resolves brew tools by absolute path and runs them
+	# via as_brew_user; Workbrew's prefix is root-owned, so it stays safe
+	# to execute from directly.
+	if [ "$(id -u)" -ne 0 ] || [ "$BREW_FLAVOR" = "workbrew" ]; then
+		export PATH="${prefix}/bin:${prefix}/sbin:${PATH}"
+	fi
 	export HOMEBREW_PREFIX="${prefix}"
 	return 0
 }
@@ -412,6 +430,33 @@ brew_run() {
 	as_brew_user "$BREW_BIN" "$@"
 }
 
+# Resolve a brew-installed tool to an absolute path. Prefers the brew prefix
+# (which root deliberately keeps off its PATH for vanilla Homebrew), falling
+# back to a PATH lookup for tools installed some other way. Prints the path;
+# fails if the tool can't be found.
+find_brew_tool() {
+	if [ -n "${HOMEBREW_PREFIX:-}" ] && [ -x "${HOMEBREW_PREFIX}/bin/$1" ]; then
+		printf '%s\n' "${HOMEBREW_PREFIX}/bin/$1"
+		return 0
+	fi
+	command -v "$1"
+}
+
+# Run jq in the brew user's context. jq is brew-installed, so root must never
+# execute it from a user-writable prefix (see as_brew_user). Callers feed
+# input files on stdin (redirect or cat) rather than as arguments: when
+# as_brew_user drops to the console user, that user can't read root-only
+# files in SBOM_DIR, but a file descriptor the calling shell already opened
+# passes across the sudo boundary fine.
+jq_run() {
+	local jq_bin
+	jq_bin=$(find_brew_tool jq) || {
+		echo "✗ jq not found" >&2
+		return 127
+	}
+	as_brew_user "$jq_bin" "$@"
+}
+
 ensure_homebrew() {
 	# Prefer an existing installation. Workbrew is the MDM-managed brew
 	# flavour and is expected to be pre-installed via the fleet config;
@@ -426,7 +471,7 @@ ensure_homebrew() {
 	echo "✓ Neither Workbrew nor Homebrew found — installing Homebrew..."
 
 	# Homebrew's installer refuses root. When running as root (MDM
-	# MDM context), invoke the installer as the logged-in console user.
+	# context), invoke the installer as the logged-in console user.
 	if [ "$(id -u)" -eq 0 ]; then
 		if [ -z "${CONSOLE_USER:-}" ] || [ "$CONSOLE_USER" = "root" ]; then
 			echo "✗ Cannot install Homebrew as root with no console user." >&2
@@ -455,7 +500,9 @@ ensure_homebrew() {
 }
 
 ensure_jq() {
-	if command -v jq &>/dev/null; then
+	# find_brew_tool also covers root + vanilla Homebrew, where the brew
+	# prefix is intentionally not on root's PATH.
+	if find_brew_tool jq >/dev/null 2>&1; then
 		return 0
 	fi
 
@@ -470,8 +517,14 @@ ensure_jq() {
 }
 
 ensure_gnumfmt() {
-	# Check if numfmt is available (GNU coreutils)
-	if command -v numfmt &>/dev/null; then
+	# Check if numfmt is available (GNU coreutils). Homebrew's coreutils
+	# installs it g-prefixed as gnumfmt (format_bytes falls back to that
+	# name), so check both before reaching for brew, and check the brew
+	# prefix directly for the root case where it isn't on PATH.
+	if command -v numfmt &>/dev/null || command -v gnumfmt &>/dev/null; then
+		return 0
+	fi
+	if [ -n "${HOMEBREW_PREFIX:-}" ] && [ -x "${HOMEBREW_PREFIX}/bin/gnumfmt" ]; then
 		return 0
 	fi
 
@@ -498,7 +551,7 @@ ensure_syft() {
 		return 1
 	fi
 
-	if command -v syft &>/dev/null; then
+	if find_brew_tool syft >/dev/null 2>&1; then
 		echo "✓ Upgrading Syft..."
 		# Don't mask failures — they may indicate tap compromise, network
 		# issues, or a refuse-to-run-as-root response. Warn but continue
@@ -556,6 +609,11 @@ ensure_sbomnix() {
 	return 0
 }
 
+# Absolute path to pyspdxtools, set by ensure_pyspdxtools. Kept as a path and
+# invoked via as_brew_user rather than prepended to PATH: pipx's bin directory
+# is user-writable, and root must never execute from user-writable locations.
+PYSPDXTOOLS_BIN=""
+
 ensure_pyspdxtools() {
 	# pipx installs binaries into the user's ~/.local/bin. The "user" here
 	# depends on the brew flavour: Workbrew runs as root → /var/root/.local/bin,
@@ -568,11 +626,12 @@ ensure_pyspdxtools() {
 		pipx_bin="${HOME}/.local/bin"
 	fi
 
-	if ! command -v pyspdxtools &>/dev/null && [ -x "${pipx_bin}/pyspdxtools" ]; then
-		export PATH="${pipx_bin}:${PATH}"
+	if [ -x "${pipx_bin}/pyspdxtools" ]; then
+		PYSPDXTOOLS_BIN="${pipx_bin}/pyspdxtools"
+		return 0
 	fi
-
 	if command -v pyspdxtools &>/dev/null; then
+		PYSPDXTOOLS_BIN=$(command -v pyspdxtools)
 		return 0
 	fi
 
@@ -585,12 +644,17 @@ ensure_pyspdxtools() {
 			echo "✗ pipx install via brew failed" >&2
 			return 1
 		fi
-		if ! as_brew_user pipx install spdx-tools; then
+		local pipx_path
+		pipx_path=$(find_brew_tool pipx) || {
+			echo "✗ pipx installed but not found in the brew prefix" >&2
+			return 1
+		}
+		if ! as_brew_user "$pipx_path" install spdx-tools; then
 			echo "✗ pipx install spdx-tools failed" >&2
 			return 1
 		fi
 		if [ -x "${pipx_bin}/pyspdxtools" ]; then
-			export PATH="${pipx_bin}:${PATH}"
+			PYSPDXTOOLS_BIN="${pipx_bin}/pyspdxtools"
 			return 0
 		fi
 	fi
@@ -601,16 +665,31 @@ ensure_pyspdxtools() {
 validate_spdx() {
 	local spdx_file="$1"
 
-	if ! command -v pyspdxtools &>/dev/null; then
+	if [ -z "$PYSPDXTOOLS_BIN" ]; then
 		echo "  ✗ pyspdxtools not available - cannot validate" >&2
 		return 1
 	fi
 
 	echo "→ Validating SPDX document..."
 
+	# pyspdxtools runs via as_brew_user, which may drop to the console user
+	# (root + vanilla Homebrew). SBOM_DIR is root-only in that case, so
+	# validate a readable temp copy instead of the original. The contents
+	# aren't sensitive to that user: it's their own package inventory.
+	# Use /tmp, not $TMPDIR: root's $TMPDIR (/var/folders/...) isn't
+	# traversable by the console user, whereas /tmp is world-traversable.
+	# pyspdxtools infers the format from the file extension, hence the
+	# dir-then-fixed-name pattern (macOS mktemp can't template a suffix).
+	local copy_dir
+	copy_dir=$(mktemp -d /tmp/sbom-validate-XXXXXX) || return 1
+	chmod 755 "$copy_dir"
+	cp "$spdx_file" "${copy_dir}/validate.spdx.json"
+	chmod 644 "${copy_dir}/validate.spdx.json"
+
 	local validation_output
-	validation_output=$(pyspdxtools -i "$spdx_file" 2>&1)
+	validation_output=$(as_brew_user "$PYSPDXTOOLS_BIN" -i "${copy_dir}/validate.spdx.json" 2>&1)
 	local exit_code=$?
+	rm -rf "$copy_dir"
 
 	if [ $exit_code -eq 0 ]; then
 		echo "  ✓ SPDX validation passed"
@@ -669,7 +748,7 @@ generate_nix_sbom() {
 					}
 
 					# Validate sbomnix produced valid SPDX output
-					if [ -f "$pkg_sbom" ] && jq -e '.spdxVersion' "$pkg_sbom" >/dev/null 2>&1; then
+					if [ -f "$pkg_sbom" ] && jq_run -e '.spdxVersion' <"$pkg_sbom" >/dev/null 2>&1; then
 						nix_sboms+=("$pkg_sbom")
 						# Clean up extra outputs sbomnix creates
 						safe_delete_file "${SBOM_DIR}/sbom.cdx.json"
@@ -697,8 +776,10 @@ generate_nix_sbom() {
 	if [ ${#nix_sboms[@]} -gt 0 ]; then
 		echo "  → Merging ${#nix_sboms[@]} Nix SBOM(s)..."
 
-		# Merge packages from all Nix SBOMs, deduplicate licenses, remove CPE refs
-		if ! jq -s '{
+		# Merge packages from all Nix SBOMs, deduplicate licences, remove CPE
+		# refs. The (possibly root) shell feeds the input files to jq via cat
+		# so jq never needs to read SBOM_DIR itself (see jq_run).
+		if ! cat "${nix_sboms[@]}" | jq_run -s '{
                 SPDXID: "SPDXRef-DOCUMENT",
                 spdxVersion: "SPDX-2.3",
                 creationInfo: (.[0].creationInfo // {created: (now | strftime("%Y-%m-%dT%H:%M:%SZ"))}),
@@ -720,7 +801,7 @@ generate_nix_sbom() {
                                if .externalRefs == [] then del(.externalRefs) else . end
                            ))
             } | if .hasExtractedLicensingInfos == [] then del(.hasExtractedLicensingInfos) else . end
-        ' "${nix_sboms[@]}" >"$output_file"; then
+        ' >"$output_file"; then
 			echo "  ✗ jq merge failed for Nix SBOMs" >&2
 			return 1
 		fi
@@ -731,7 +812,7 @@ generate_nix_sbom() {
 		fi
 
 		local pkg_count
-		pkg_count=$(jq '.packages | length' "$output_file" 2>/dev/null || echo "0")
+		pkg_count=$(jq_run '.packages | length' <"$output_file" 2>/dev/null || echo "0")
 		echo "  ✓ Merged Nix SBOM: $pkg_count packages"
 
 		if [[ "$MODE" == test* ]]; then
@@ -741,7 +822,9 @@ generate_nix_sbom() {
 		return 0
 	else
 		# No Nix packages found, but sbomnix ran successfully
-		# Create empty SBOM to satisfy the requirement
+		# Create empty SBOM to satisfy the requirement.
+		# The spdx.org documentNamespace below is an SPDX identifier, not a
+		# link; it is not meant to resolve (fetching it 404s by design).
 		echo "  ⚠ No Nix packages found (profile and projects empty)"
 		echo '{"SPDXID":"SPDXRef-DOCUMENT","spdxVersion":"SPDX-2.3","name":"nix-packages","dataLicense":"CC0-1.0","documentNamespace":"http://spdx.org/spdxdocs/empty","packages":[],"relationships":[]}' >"$output_file"
 		return 0
@@ -930,6 +1013,8 @@ generate_system_sbom() {
 
 		if [ ${#scan_paths[@]} -eq 0 ]; then
 			echo "  ⚠ No known package manager directories found"
+			# documentNamespace is an SPDX identifier, not a link; it is not
+			# meant to resolve.
 			echo '{"SPDXID":"SPDXRef-DOCUMENT","spdxVersion":"SPDX-2.3","name":"system-packages","dataLicense":"CC0-1.0","documentNamespace":"http://spdx.org/spdxdocs/empty","packages":[],"relationships":[]}' >"$output_file"
 			return 0
 		fi
@@ -943,32 +1028,60 @@ generate_system_sbom() {
 	local partial_sboms=()
 	local scan_idx=0
 
+	# Resolve syft once, by absolute path: as_brew_user may hand execution
+	# to sudo, whose PATH we don't control, and root must never resolve
+	# tools through a user-writable prefix on its own PATH.
+	local syft_bin
+	syft_bin=$(find_brew_tool syft) || {
+		echo "✗ syft not found on PATH or in the brew prefix" >&2
+		return 1
+	}
+
 	for scan_path in "${scan_paths[@]}"; do
 		echo "  → Scanning: $scan_path"
 		local partial_file="${temp_file}.${scan_idx}"
+		local timeout_flag="${partial_file}.timeout"
 		scan_idx=$((scan_idx + 1))
 
-		# Retry loop: Syft's directory indexer treats ENOENT as fatal when transient
-		# directories vanish mid-scan (anchore/syft#3286). Retry up to 3 times.
+		# Retry loop: Syft's directory indexer treats lstat failures as fatal.
+		# ENOENT from paths that vanish mid-scan is anchore/syft#1860 and
+		# #2627; EACCES on unreadable paths is the same failure shape,
+		# tracked as anchore/syft#3286. Retry up to 3 times.
 		local syft_max_retries=3
 		local syft_attempt=0
 		local syft_exit=1
 
 		while [ "$syft_attempt" -lt "$syft_max_retries" ]; do
 			syft_attempt=$((syft_attempt + 1))
-			rm -f "$partial_file" "$syft_errors"
+			rm -f "$partial_file" "$syft_errors" "$timeout_flag"
 
 			if [ "$syft_attempt" -gt 1 ]; then
 				echo "    → Retry $syft_attempt/$syft_max_retries..."
 			fi
 
-			SYFT_CHECK_FOR_APP_UPDATE=false taskpolicy -b syft scan "dir:$scan_path" \
+			# Syft runs via as_brew_user (never as root from a user-writable
+			# prefix) and writes the SBOM to stdout: the calling shell owns
+			# the output file, so the brew user needs no access to SBOM_DIR.
+			as_brew_user /usr/bin/env SYFT_CHECK_FOR_APP_UPDATE=false \
+				/usr/sbin/taskpolicy -b "$syft_bin" scan "dir:$scan_path" \
 				--source-name "$DEVICE_ID" \
 				--source-version "$TIMESTAMP" \
-				--output "spdx-json=$partial_file" \
-				--exclude '**/.git/**' 2>"$syft_errors" &
+				--output spdx-json \
+				--exclude '**/.git/**' >"$partial_file" 2>"$syft_errors" &
 			local syft_pid=$!
-			(sleep "$syft_timeout" && kill "$syft_pid" 2>/dev/null) &
+			# Watchdog: record that it fired, then kill the job. The flag
+			# file (not the exit code) is what identifies a timeout: `wait`
+			# reaps $syft_pid, and exit>128 only proves a signal death,
+			# which a segfault or memory-pressure SIGKILL would also
+			# produce. pkill -P reaches through the layer as_brew_user may
+			# interpose ($syft_pid can be a subshell whose child is sudo or
+			# syft); sudo relays SIGTERM to the command it runs.
+			(
+				sleep "$syft_timeout"
+				touch "$timeout_flag"
+				pkill -TERM -P "$syft_pid" 2>/dev/null || true
+				kill "$syft_pid" 2>/dev/null || true
+			) &
 			local watchdog_pid=$!
 			wait "$syft_pid" 2>/dev/null
 			syft_exit=$?
@@ -980,7 +1093,7 @@ generate_system_sbom() {
 			fi
 
 			# Timeout — not retryable
-			if ! kill -0 "$syft_pid" 2>/dev/null && [ "$syft_exit" -gt 128 ]; then
+			if [ -f "$timeout_flag" ]; then
 				echo "    ⚠ Syft scan timed out for $scan_path (skipping)" >&2
 				break
 			fi
@@ -999,12 +1112,12 @@ generate_system_sbom() {
 			break
 		done
 
-		rm -f "$syft_errors"
+		rm -f "$syft_errors" "$timeout_flag"
 
 		if [ "$syft_exit" -eq 0 ] && [ -f "$partial_file" ] && [ -s "$partial_file" ]; then
 			partial_sboms+=("$partial_file")
 			local partial_pkg_count
-			partial_pkg_count=$(jq '.packages | length' "$partial_file" 2>/dev/null || echo "?")
+			partial_pkg_count=$(jq_run '.packages | length' <"$partial_file" 2>/dev/null || echo "?")
 			echo "    ✓ $partial_pkg_count packages"
 		else
 			rm -f "$partial_file"
@@ -1022,7 +1135,8 @@ generate_system_sbom() {
 	# - Remove file-dependent fields incompatible with filesAnalyzed=false
 	# - Remove empty versionInfo fields
 	# - Remove CPE externalRefs (cpe23Type)
-	if ! jq -s '
+	# Inputs are fed via cat so jq never reads SBOM_DIR itself (see jq_run).
+	if ! cat "${partial_sboms[@]}" | jq_run -s '
         {
             SPDXID: .[0].SPDXID,
             spdxVersion: .[0].spdxVersion,
@@ -1050,7 +1164,7 @@ generate_system_sbom() {
         } |
         del(.files) |
         if .hasExtractedLicensingInfos == [] then del(.hasExtractedLicensingInfos) else . end
-    ' "${partial_sboms[@]}" >"$output_file"; then
+    ' >"$output_file"; then
 		for f in "${partial_sboms[@]}"; do rm -f "$f"; done
 		echo "  ✗ jq merge/processing failed for system SBOM" >&2
 		return 1
@@ -1065,7 +1179,7 @@ generate_system_sbom() {
 	fi
 
 	local pkg_count
-	pkg_count=$(jq '.packages | length' "$output_file" 2>/dev/null || echo "0")
+	pkg_count=$(jq_run '.packages | length' <"$output_file" 2>/dev/null || echo "0")
 	echo "  ✓ System scan complete: $pkg_count packages"
 
 	if [[ "$MODE" == test* ]]; then
@@ -1120,7 +1234,8 @@ generate_device_sbom() {
 		fi
 		local doc_namespace="http://spdx.org/spdxdocs/${DEVICE_ID}-${doc_uuid}"
 
-		if ! jq -s --arg device_id "$DEVICE_ID" --arg namespace "$doc_namespace" '{
+		# shellcheck disable=SC2016  # $device_id/$namespace are jq --arg variables
+		if ! cat "${sboms_to_merge[@]}" | jq_run -s --arg device_id "$DEVICE_ID" --arg namespace "$doc_namespace" '{
                 SPDXID: "SPDXRef-DOCUMENT",
                 spdxVersion: "SPDX-2.3",
                 creationInfo: {
@@ -1152,7 +1267,7 @@ generate_device_sbom() {
                     }
                 ]
             } | if .hasExtractedLicensingInfos == [] then del(.hasExtractedLicensingInfos) else . end
-        ' "${sboms_to_merge[@]}" >"$merged_sbom"; then
+        ' >"$merged_sbom"; then
 			echo "  ✗ jq merge failed for device SBOM" >&2
 			exit 1
 		fi
@@ -1166,7 +1281,7 @@ generate_device_sbom() {
 	fi
 
 	local final_pkg_count
-	final_pkg_count=$(jq '.packages | length' "$merged_sbom")
+	final_pkg_count=$(jq_run '.packages | length' <"$merged_sbom")
 	echo "  ✓ Final SBOM: $final_pkg_count packages" >&2
 
 	if [[ "$MODE" == test* ]]; then
@@ -1187,7 +1302,8 @@ upload_sbom() {
 
 	# Build JSON payload safely using jq
 	local json_payload
-	json_payload=$(jq -n \
+	# shellcheck disable=SC2016  # $dev/$sum are jq --arg variables
+	json_payload=$(jq_run -n \
 		--arg dev "$DEVICE_ID" \
 		--arg sum "$checksum" \
 		'{device_id: $dev, checksum: $sum}')
@@ -1217,8 +1333,8 @@ upload_sbom() {
 
 	# Extract upload URL and correlation ID
 	local upload_url correlation_id
-	upload_url=$(echo "$presign_response" | jq -r '.upload_url')
-	correlation_id=$(echo "$presign_response" | jq -r '.correlation_id // "unknown"')
+	upload_url=$(echo "$presign_response" | jq_run -r '.upload_url')
+	correlation_id=$(echo "$presign_response" | jq_run -r '.correlation_id // "unknown"')
 	
 	# Calculate HMAC signature using the same logic as the Go presignSignature function
 	local sig
@@ -1226,10 +1342,17 @@ upload_sbom() {
 		echo "✗ SBOM_PRESIGN_SECRET environment variable not set" >&2
 		return 1
 	fi
-	if command -v openssl &>/dev/null; then
-		sig=$(printf '%s' "$checksum" | openssl dgst -sha256 -hmac "$SBOM_PRESIGN_SECRET" -hex | sed 's/^.* //')
+	# Keep the key out of argv: openssl's `-hmac KEY` is visible in the
+	# process list while the digest runs, and the auth token above is routed
+	# through a curl --config file for exactly that reason. macOS ships perl
+	# with Digest::SHA, which can take the key from the environment of this
+	# one child process instead of the command line.
+	if [ -x /usr/bin/perl ]; then
+		sig=$(printf '%s' "$checksum" | SBOM_PRESIGN_SECRET="$SBOM_PRESIGN_SECRET" /usr/bin/perl \
+			-MDigest::SHA=hmac_sha256_hex \
+			-e 'local $/; my $d = <STDIN>; print hmac_sha256_hex($d, $ENV{SBOM_PRESIGN_SECRET});')
 	else
-		echo "✗ openssl not available for HMAC signature calculation" >&2
+		echo "✗ /usr/bin/perl not available for HMAC signature calculation" >&2
 		return 1
 	fi
 
@@ -1239,10 +1362,19 @@ upload_sbom() {
 		return 1
 	fi
 
-	# Validate upload URL points to AWS S3 (prevent exfiltration via compromised Lambda)
-	# Extract host from URL — only matches https://, so http:// is implicitly rejected
+	# Sanity-check that the presigned URL is an HTTPS *.amazonaws.com
+	# endpoint. This catches a plainly wrong or mangled Lambda response; it
+	# cannot stop a compromised Lambda from redirecting the upload, since any
+	# attacker-owned AWS bucket also ends in .amazonaws.com. Treat it as a
+	# tripwire, no more.
+	# Host extraction stops at '/', '?' or '#' (a naive parse that only
+	# stops at '/' is bypassable via https://evil.example?x=.amazonaws.com/)
+	# and strips userinfo and port before the suffix check. Only matches
+	# https://, so http:// is implicitly rejected.
 	local upload_host
-	upload_host=$(printf '%s' "$upload_url" | sed -n 's|^https://\([^/]*\)/.*|\1|p')
+	upload_host=$(printf '%s' "$upload_url" | sed -n -E 's|^https://([^/?#]*).*|\1|p')
+	upload_host="${upload_host##*@}"
+	upload_host="${upload_host%%:*}"
 	if [[ -z "$upload_host" || "$upload_host" != *.amazonaws.com ]]; then
 		echo "✗ Presigned URL is not a valid HTTPS AWS endpoint" >&2
 		return 1
@@ -1360,10 +1492,10 @@ test_mode_summary() {
 
 	# Validate SPDX fields
 	local spdx_id spdx_version doc_namespace pkg_count
-	spdx_id=$(jq -r '.SPDXID' "$sbom_file" 2>/dev/null)
-	spdx_version=$(jq -r '.spdxVersion' "$sbom_file" 2>/dev/null)
-	doc_namespace=$(jq -r '.documentNamespace' "$sbom_file" 2>/dev/null)
-	pkg_count=$(jq '.packages | length' "$sbom_file" 2>/dev/null)
+	spdx_id=$(jq_run -r '.SPDXID' <"$sbom_file" 2>/dev/null)
+	spdx_version=$(jq_run -r '.spdxVersion' <"$sbom_file" 2>/dev/null)
+	doc_namespace=$(jq_run -r '.documentNamespace' <"$sbom_file" 2>/dev/null)
+	pkg_count=$(jq_run '.packages | length' <"$sbom_file" 2>/dev/null)
 
 	echo "  SPDXID: $spdx_id"
 	echo "  spdxVersion: $spdx_version"
@@ -1373,7 +1505,7 @@ test_mode_summary() {
 
 	# Show sample packages
 	echo "Sample packages (first 5):"
-	jq -r '.packages[0:5] | .[] | "  - \(.name) \(.versionInfo // "UNKNOWN")"' "$sbom_file" 2>/dev/null
+	jq_run -r '.packages[0:5] | .[] | "  - \(.name) \(.versionInfo // "UNKNOWN")"' <"$sbom_file" 2>/dev/null
 	echo ""
 
 	echo "✓ Single merged SBOM file created (intermediate files cleaned up)"
@@ -1403,6 +1535,15 @@ main() {
 		if [ ${#SBOM_AUTH_TOKEN} -lt 32 ]; then
 			echo "⚠ Warning: SBOM_AUTH_TOKEN seems too short (${#SBOM_AUTH_TOKEN} chars, expected 32+)" >&2
 			echo "  Continuing anyway - Lambda will reject if invalid" >&2
+		fi
+		# Validate the presign secret up front too: upload_sbom hard-fails
+		# without it, and discovering that only after a potentially
+		# hour-long scan wastes the whole run.
+		if [ -z "${SBOM_PRESIGN_SECRET:-}" ]; then
+			echo "✗ SBOM_PRESIGN_SECRET environment variable not set" >&2
+			echo "  This should be configured via MDM or the System Keychain" >&2
+			echo "  Use --test mode for local testing without secrets" >&2
+			exit 1
 		fi
 	fi
 

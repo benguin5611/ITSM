@@ -27,7 +27,7 @@ See [macos-network-diag/README.md](macos-network-diag/README.md).
 
 Automated monthly SBOM collection from macOS developer machines in SPDX 2.3 format. A bash script on each device scans Nix and Homebrew packages, the result is uploaded via a presigned URL to S3, and a Lambda validates the SPDX schema before long-term storage. Contains:
 
-- The on-device collection script.
+- The on-device collection script (`sbom-audit-spdx.sh`), plus a standalone variant (`sbom-audit-simple.sh`) that runs Syft on demand and writes the SPDX file locally, with no Nix scanning, monthly throttling, or Lambda upload.
 - The Go Lambda that issues presigned URLs and validates uploads.
 - Terraform for the S3 bucket, Lambda, IAM, KMS, logs, alarms, and secrets.
 - The SPDX 2.3 JSON schema used for validation.

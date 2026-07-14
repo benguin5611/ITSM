@@ -19,9 +19,9 @@ Detect signs of AI-generated writing in text, flag them, and rewrite to sound na
 
 1. **Zero em-dashes.** Never use `—` (em-dash) or `–` (en-dash) in rewritten output, anywhere, for any reason. Even correct usage now reads as AI. Replace every em-dash with a comma, semicolon, full stop, parentheses, or rephrase. This rule has no exceptions. Scan the final draft for `—` and `–` characters before returning.
 2. **Zero negation pivots.** No "not X, but Y", no "It wasn't X. It was Y.", no "X isn't a Y problem; it's a Z problem". State the positive claim directly. See *Negation pivot* below.
-3. **Style reference.** Apply the rules in `references/style-reference.md` to every rewrite — Title Case headings, inconsistent spelling conventions, and trailing punctuation on short bullets are AI tells *and* style violations. Read the reference before rewriting; key rules: sentence-case headings, one consistent spelling locale (US/UK/AU), no full stops in acronyms, no trailing punctuation on short bullets, role titles and common nouns lowercase in body text.
+3. **Style reference.** Apply the rules in `references/style-reference.md` to every rewrite: Title Case headings, inconsistent spelling conventions, and trailing punctuation on short bullets are AI tells *and* style violations. Read the reference before rewriting; key rules: sentence-case headings, one consistent spelling locale (US/UK/AU), no full stops in acronyms, no trailing punctuation on short bullets, role titles and common nouns lowercase in body text.
 
-These patterns account for most of the AI-feel that survives normal editing. Treat them as bans, not preferences.
+These patterns account for most of the AI-feel that survives normal editing. Treat every one of them as a ban.
 
 ## Before you start
 
@@ -125,7 +125,7 @@ Avoiding repetition of a word by cycling through synonyms unnaturally: a person'
 
 **Tables for trivial data.** Small tables that would work better as prose.
 
-**Curly quotation marks.** "curly" instead of "straight" quotes. Most associated with ChatGPT/DeepSeek output, but other models produce them in some contexts — and so do Word, Google Docs, and macOS autocorrect on human-typed text. Never diagnostic alone; treat as corroborative only when clustered with stronger tells.
+**Curly quotation marks.** "curly" instead of "straight" quotes. Most associated with ChatGPT/DeepSeek output, but other models produce them in some contexts, and so do Word, Google Docs, and macOS autocorrect on human-typed text. Never diagnostic alone; treat as corroborative only when clustered with stronger tells.
 
 ### Not AI tells (avoid false positives)
 

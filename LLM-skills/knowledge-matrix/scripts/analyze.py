@@ -14,10 +14,11 @@ map_path, discs_for = build_mapper(cfg)
 DISC_IDS = [d for d, _ in get_disciplines(cfg)]
 def bot(login): return is_bot(login, cfg)
 
-CORRECT_RE = re.compile(r"\b(should(n't| not)?|don't|do not|instead|actually|incorrect|wrong|"
+CORRECT_RE = re.compile(r"\b(nit|suggestion):|"  # colon-terminated prefixes: no trailing \b (it fails before a space)
+    r"\b(should(n't| not)?|don't|do not|instead|actually|incorrect|wrong|"
     r"the issue is|this won't|this will (break|fail)|need to|must|prefer|avoid|"
     r"not how|that's not|this is not|revert|please (use|change|remove|fix)|"
-    r"why (are|is|do|don't)|nit:|suggestion:|consider |we (use|don't use)|"
+    r"why (are|is|do|don't)|consider |we (use|don't use)|"
     r"this should be|missing|you('| a)re (using|missing)|let's not)\b", re.I)
 LEARN_RE = re.compile(r"\b(good (catch|point)|you('| a)re right|my (bad|mistake)|"
     r"i('ll| will) (fix|change|update|revert)|done(\.|,| -)|fixed|TIL|"
@@ -35,6 +36,7 @@ repos_active = collections.defaultdict(set)
 disc_pr_count = collections.Counter()
 repo_pr_count = collections.Counter()
 all_repos = set()
+seen = set()  # de-dupe by (repo, number): self mode harvests author/reviewer/commenter into separate files
 
 def add(p, d, k, v=1):
     if not p or bot(p): return
@@ -45,12 +47,15 @@ def radd(p, repo, k, v=1):
     rmetrics[p][repo][k] += v
 
 for f in glob.glob(os.path.join(WORK, "raw", "*.ndjson")):
-    repo = os.path.basename(f)[:-len(".ndjson")].replace(".me", "").replace(".rev", "")
+    repo = os.path.basename(f)[:-len(".ndjson")].replace(".me", "").replace(".rev", "").replace(".cmt", "")
     all_repos.add(repo)
     for line in open(f):
         line = line.strip()
         if not line: continue
         pr = json.loads(line)
+        key = (repo, pr.get("number"))
+        if key in seen: continue
+        seen.add(key)
         author = (pr.get("author") or {}).get("login")
         discs = discs_for(repo, pr)
         for d in discs: disc_pr_count[d] += 1

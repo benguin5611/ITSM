@@ -28,9 +28,7 @@ def derive_role(p):
     strong = sorted([(labels[d], c[d]["level"]) for d in DISC_IDS if c[d]["level"] >= 3], key=lambda x:-x[1])
     if not strong: return "Generalist — developing"
     if len(strong) >= max(4, 0.55*len(DISC_IDS)): return "Full-stack / broad authority"
-    # otherwise name the dominant group, falling back to the top strengths
-    gsum = {g: sum(c[d]["level"] for d in ds) for g, ds in GROUPS}
-    topg = max(gsum, key=gsum.get) if gsum else ""
+    # otherwise name the top strengths
     names = ", ".join(lbl for lbl, _ in strong[:3])
     return f"Strength: {names}"
 

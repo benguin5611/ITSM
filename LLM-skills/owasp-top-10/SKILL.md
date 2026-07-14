@@ -1,7 +1,7 @@
 ---
 name: owasp-top-10
 description: >-
-  Analyze code for OWASP security vulnerabilities across three lists:
+  Analyse code for OWASP security vulnerabilities across three lists:
   Web Top 10 2025 (A01–A10), API Security Top 10 2023 (API1–API10), and
   LLM AI Security Top 10 2025 (LLM01–LLM10).
   This skill should be used when the user asks to "check for security vulnerabilities",
@@ -214,7 +214,7 @@ See [API-top10-2023.md](references/API-top10-2023.md) for detailed patterns.
 
 #### API8:2023 — Security Misconfiguration (API-specific)
 Check: missing or overly permissive CORS headers on API routes, TLS not enforced between services (internal HTTP without TLS), verbose error responses that include stack traces or internal paths, unnecessary HTTP verbs enabled (e.g. TRACE), missing `Cache-Control: no-store` on responses containing sensitive data, JNDI/log4shell-style lookup expansion in logging configs, S3 bucket permissions too open.
-CWEs: CWE-2, CWE-16, CWE-209, CWE-319, CWE-444, CWE-942.
+CWEs: CWE-2, CWE-16, CWE-209, CWE-319, CWE-388, CWE-444, CWE-942.
 See [API-top10-2023.md](references/API-top10-2023.md) for detailed patterns.
 
 #### API9:2023 — Improper Inventory Management

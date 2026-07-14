@@ -134,8 +134,13 @@ grep -rn "unhandledRejection\|uncaughtException"
 
 Grep patterns:
 ```
-_, err\s*:?=.*\n\s*[^i]|, err\s*:?=.*\n\s*$
+, _\s*:?=
 panic\(
+```
+
+An `err` assigned but never checked (second example below) spans two lines, so a plain line-based grep cannot catch it; use a multiline-capable search:
+```
+rg --multiline --pcre2 ', err\s*:?=.*\n(?!\s*if\s)'
 ```
 
 **Ignored errors:**
