@@ -7,9 +7,9 @@ Version: 1.0 (template)
 
 # Post-incident report (PIR) template
 
-> Part of the [docs-kit](../README.md#before-you-rely-on-anything-here) — a Department-of-One starting point, not a certified or audit-ready control out of the box. Read that disclaimer and this artefact's own "Adapt this to your context" section before relying on it.
+> Part of the [docs-kit](../README.md#before-you-rely-on-anything-here): a Department-of-One starting point, not a certified or audit-ready control out of the box. Read that disclaimer and this artefact's own "Adapt this to your context" section before relying on it.
 
-Companion to the [Incident Response Plan](../processes-procedures/incident-response-plan.md) — run one of these for every P1/P2 incident (see the plan for priority definitions), or whenever a customer or regulator specifically asks for one.
+Companion to the [Incident Response Plan](../processes/incident-response-plan.md). Run one of these for every P1/P2 incident (see the plan for priority definitions), or whenever a customer or regulator specifically asks for one.
 
 ---
 
@@ -57,7 +57,7 @@ List the teams or individuals directly involved in managing the incident, and wh
 
 ### Objective identification
 
-State the primary response objectives clearly — what were you actually trying to achieve, in order of priority.
+State the primary response objectives clearly: what were you actually trying to achieve, in order of priority.
 
 ---
 
@@ -69,7 +69,7 @@ Detail the findings from root-cause investigation: what actually happened, and w
 
 ## Eradication and recovery
 
-Describe how the issue was fully resolved — not just contained, but actually fixed so it can't silently recur.
+Describe the root-cause fix that resolved the issue for good, so it can't silently recur.
 
 ### Test cases
 
@@ -89,7 +89,7 @@ Document how the incident was communicated, internally and externally. Note who 
 
 ## Root cause analysis
 
-Use a "5 Whys" style breakdown — each answer prompts the next "why", until you reach something you can actually fix.
+Use a "5 Whys" style breakdown: each answer prompts the next "why", until you reach something you can actually fix.
 
 1. **Why did the incident happen?**
 2. **Why did that happen?**
@@ -105,7 +105,7 @@ Use a "5 Whys" style breakdown — each answer prompts the next "why", until you
 
 ### What needs improvement
 
-Any opportunity for improvement identified here should be raised as a corresponding corrective action — a PIR that identifies a gap but doesn't produce a tracked follow-up hasn't actually closed the loop.
+Any opportunity for improvement identified here should be raised as a corresponding corrective action. A PIR only closes the loop once a gap it identifies produces a tracked follow-up.
 
 ---
 
@@ -115,6 +115,6 @@ Link everything relevant: bug/engineering tickets, help-desk tickets, pull reque
 
 ## Adapt this to your context
 
-- **Mandatory threshold**: this template assumes a PIR is run for P1/P2 incidents (see the Incident Response Plan). Some regulators or contracts require a formal PIR/root-cause analysis for any *reportable* incident regardless of internal priority — check your obligations rather than relying on the priority threshold alone.
-- **Risk-rating scale**: the "risk ratings" section assumes you already have a risk-scoring approach elsewhere in the organisation — reuse that scale here rather than inventing a second one just for incidents.
+- **Mandatory threshold**: this template assumes a PIR is run for P1/P2 incidents (see the Incident Response Plan). Some regulators or contracts require a formal PIR/root-cause analysis for any *reportable* incident regardless of internal priority. Check your obligations rather than relying on the priority threshold alone.
+- **Risk-rating scale**: the "risk ratings" section assumes you already have a risk-scoring approach elsewhere in the organisation. Reuse that scale here rather than inventing a second one just for incidents.
 - **Regulated data**: if the incident involved regulated data (health, financial, government), your jurisdiction may require specific fields or a specific notification annex beyond what's templated here.
