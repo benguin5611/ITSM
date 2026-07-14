@@ -84,7 +84,7 @@ resource "aws_cloudwatch_log_metric_filter" "unauthorized" {
 
 resource "aws_cloudwatch_metric_alarm" "unauthorized" {
   alarm_name          = "device-sbom-audit-unauthorized-attempts"
-  alarm_description   = "Multiple unauthorized presign attempts — possible token brute-force or leaked credential"
+  alarm_description   = "Multiple unauthorised presign attempts — possible token brute-force or leaked credential"
   namespace           = "DeviceSbomAudit"
   metric_name         = "UnauthorizedPresignAttempts"
   statistic           = "Sum"

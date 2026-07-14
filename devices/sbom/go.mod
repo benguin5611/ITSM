@@ -8,6 +8,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.105.0
 	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.43.0
 	github.com/google/uuid v1.6.0
+	// Deliberate pin: v1.2.0 is gojsonschema's latest release (Oct 2019).
+	// It is ubiquitous and has a clean CVE record, so the dormancy is an
+	// accepted trade-off.
 	github.com/xeipuuv/gojsonschema v1.2.0
 )
 

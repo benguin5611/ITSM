@@ -75,6 +75,8 @@ https://www.youtube.com/
 
 If an embed source isn't on this list, the iframe is stripped.
 
+The list mirrors Zendesk's published allowed list exactly (checked July 2026). That includes `web.microsoftstream.com`, which Microsoft now redirects to `stream.office.com`; the redirect target isn't on Zendesk's list, so don't swap it in.
+
 ### Wide tables — the layout pattern
 
 Most Zendesk themes render the article container at roughly **770–810px effective width** on desktop. The threshold of 700px content width gives a small safety margin for narrower viewports and browser zoom.

@@ -33,11 +33,11 @@ Monthly automated SBOM collection from macOS developer machines in SPDX 2.3 form
 
 ## What You Get
 
-**Comprehensive Coverage:**
+**Coverage:**
 - 4,500+ packages per device (Nix profile + every ecosystem [Syft](https://github.com/anchore/syft) recognises — Homebrew, pip/pipx, npm/yarn/pnpm, Go modules, Cargo, Ruby gems, Java/Maven, Cocoapods, Swift PM, Terraform providers, and more)
 - ~3.5 MB SBOM files (typical developer machine)
-- ~5 minute scan time with optimized excludes
-- Monthly automated collection with zero-touch operation
+- ~5 minute scan time (scans known package manager directories rather than the whole filesystem)
+- Monthly automated collection, no user interaction needed
 - Auto-installs all dependencies (Homebrew, Syft, sbomnix, pyspdxtools)
 
 **SPDX 2.3 Native:**
@@ -46,9 +46,9 @@ Monthly automated SBOM collection from macOS developer machines in SPDX 2.3 form
 - Passes both pyspdxtools and online converter validation
 - Embedded schema validation (no external dependencies)
 
-**Enterprise Features:**
+**Operational properties:**
 - 75 MB file support via presigned S3 URLs (bypasses Lambda 6MB limit)
-- Defense-in-depth validation (on-device + server-side)
+- Defence-in-depth validation (on-device + server-side)
 - S3 lifecycle policies (90-day Glacier, 1-year expiration)
 - CloudWatch logging for all validation events
 
@@ -151,7 +151,7 @@ sequenceDiagram
 ### Infrastructure (AWS)
 - AWS account (security/compliance account)
 - AWS CLI v2 with appropriate credentials
-- Go 1.21+ (for building Lambda binary)
+- Go 1.24+ (for building Lambda binary; `go.mod` declares `go 1.24`)
 - IAM permissions: Lambda, S3, IAM roles, CloudWatch, SNS
 
 ### Devices (macOS)
@@ -214,9 +214,9 @@ terraform apply
 
 This builds the Lambda binary, packages the zip, and provisions every AWS resource described in this README:
 
-- S3 bucket with encryption, versioning, lifecycle (1 day uploads / 90 day Glacier / 1 year), Public Access Block, BucketOwnerEnforced, and a defense-in-depth bucket policy
+- S3 bucket with encryption, versioning, lifecycle (1 day uploads / 90 day Glacier / 1 year), Public Access Block, BucketOwnerEnforced, and a defence-in-depth bucket policy
 - Separate `-access-logs` bucket capturing S3 server access logs (90 day expiry)
-- Lambda function (Linux ARM64, reserved concurrency 10) + Function URL
+- Lambda function (Linux ARM64, reserved concurrency 0 or 10 set by the required `lambda_reserved_concurrency` variable) + Function URL
 - IAM role (`device-sbom-audit-lambda-role`) with least-privileged S3 + Secrets Manager grants
 - Two Secrets Manager secrets (`device-sbom-audit/auth-token`, `device-sbom-audit/presign-secret`)
 - CloudWatch log group at `/aws/lambda/device-sbom-audit`, KMS-encrypted with a customer-managed key
@@ -268,8 +268,8 @@ done
 # 2. Tear down the stack
 terraform destroy
 
-# 3. Force-delete secrets so the names are reusable immediately (skips the 7-day
-#    recovery window). Skip this if you want the safety net.
+# 3. Force-delete secrets so the names are reusable immediately (skips the
+#    recovery window, 30 days by default). Skip this if you want the safety net.
 aws secretsmanager delete-secret --secret-id device-sbom-audit/auth-token \
   --force-delete-without-recovery
 aws secretsmanager delete-secret --secret-id device-sbom-audit/presign-secret \
@@ -279,24 +279,26 @@ aws secretsmanager delete-secret --secret-id device-sbom-audit/presign-secret \
 Notes:
 
 - **S3 buckets must be empty.** Versioned delete markers count — the snippet above handles both versions and delete markers. If `terraform destroy` still errors with `BucketNotEmpty`, re-run the loop and then `terraform destroy` again.
-- **Secrets Manager has a 7-day recovery window** by default. Without `--force-delete-without-recovery`, the secret names cannot be reused for re-creates within that window. A subsequent `terraform apply` will hit `InvalidRequestException: ... marked for deletion`. Either force-delete (above) or `aws secretsmanager restore-secret` to bring it back.
-- **The KMS customer-managed key has a 30-day deletion window.** `terraform destroy` schedules it but you cannot force-delete a KMS key any faster. If you re-deploy within 30 days, cancel the scheduled deletion with `aws kms cancel-key-deletion --key-id <id>` before re-applying.
+- **Secrets Manager has a 30-day recovery window** by default (configurable down to 7 days). Without `--force-delete-without-recovery`, the secret names cannot be reused for re-creates within that window. A subsequent `terraform apply` will hit `InvalidRequestException: ... marked for deletion`. Either force-delete (above) or `aws secretsmanager restore-secret` to bring it back.
+- **The KMS customer-managed key is scheduled for deletion with a 30-day window** (this stack's setting). A KMS key can never be deleted immediately; the minimum waiting period is 7 days, so if you need it gone sooner run `aws kms cancel-key-deletion --key-id <id>` then `aws kms schedule-key-deletion --key-id <id> --pending-window-in-days 7`. If you re-deploy within the window, cancel the scheduled deletion before re-applying.
 
 ---
 
 ## Manual deployment (CLI walkthrough — reference)
 
-The steps below produce the same system as `terraform apply`. Use them for one-off operations or to understand what Terraform provisions.
+The steps below produce the core of what `terraform apply` provisions (Terraform additionally creates the access-logs bucket, the KMS-encrypted log group, and the `unauthorized-attempts` alarm). Use them for one-off operations or to understand the stack.
 
 Follow these steps in order. Total time: ~15 minutes.
 
 ### 1. Create S3 Bucket
 
 ```bash
-# Create bucket
+# Create bucket (ap-southeast-2 matches the Terraform default; substitute your
+# region. Outside us-east-1 the LocationConstraint is required.)
 aws s3api create-bucket \
   --bucket <your-sbom-bucket> \
-  --region us-east-1
+  --region ap-southeast-2 \
+  --create-bucket-configuration LocationConstraint=ap-southeast-2
 
 # Enable encryption
 aws s3api put-bucket-encryption \
@@ -365,7 +367,9 @@ aws iam attach-role-policy \
   --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
 # Add S3 access policy — uploads/ is read/write/delete (Lambda manages
-# the upload lifecycle); sboms/ is write-once (validated archive).
+# the upload lifecycle); sboms/ is the validated archive (delete is needed
+# so the Lambda can roll back an archived copy whose checksum fails
+# verification after the copy).
 aws iam put-role-policy \
   --role-name device-sbom-audit-lambda-role \
   --policy-name device-sbom-audit-s3-access \
@@ -379,9 +383,9 @@ aws iam put-role-policy \
         "Resource": "arn:aws:s3:::<your-sbom-bucket>/uploads/*"
       },
       {
-        "Sid": "WriteOnceArchive",
+        "Sid": "ValidatedArchive",
         "Effect": "Allow",
-        "Action": ["s3:GetObject", "s3:PutObject"],
+        "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
         "Resource": "arn:aws:s3:::<your-sbom-bucket>/sboms/*"
       }
     ]
@@ -415,16 +419,21 @@ aws secretsmanager create-secret \
 AUTH_TOKEN_SECRET_ARN=$(aws secretsmanager describe-secret --secret-id device-sbom-audit/auth-token --query ARN --output text)
 PRESIGN_SECRET_ARN=$(aws secretsmanager describe-secret --secret-id device-sbom-audit/presign-secret --query ARN --output text)
 
-echo ""
-echo "Save both values above — distribute to MDM as SBOM_AUTH_TOKEN and"
-echo "SBOM_PRESIGN_SECRET. Both are required by the device script."
+# Retrieve the secret values to distribute via MDM as SBOM_AUTH_TOKEN and
+# SBOM_PRESIGN_SECRET. Both are required by the device script.
+aws secretsmanager get-secret-value \
+  --secret-id device-sbom-audit/auth-token \
+  --query SecretString --output text
+aws secretsmanager get-secret-value \
+  --secret-id device-sbom-audit/presign-secret \
+  --query SecretString --output text
 ```
 
 #### Step 2.3: Build and Deploy Lambda
 
 ```bash
-# Build Lambda binary
-cd lambda/
+# Build Lambda binary (run from devices/sbom/, where the Go source, go.mod
+# and embedded schema live)
 GOOS=linux GOARCH=arm64 go build -o bootstrap lambda-spdx-validator.go
 zip lambda-spdx-validator.zip bootstrap
 
@@ -436,14 +445,20 @@ aws lambda create-function \
   --handler bootstrap \
   --role arn:aws:iam::ACCOUNT_ID:role/device-sbom-audit-lambda-role \
   --zip-file fileb://lambda-spdx-validator.zip \
-  --timeout 60 \
+  --timeout 120 \
   --memory-size 512 \
-  --reserved-concurrent-executions 10 \
   --environment Variables="{
     \"SBOM_BUCKET\":\"<your-sbom-bucket>\",
     \"SBOM_AUTH_TOKEN_SECRET_ARN\":\"$AUTH_TOKEN_SECRET_ARN\",
     \"SBOM_PRESIGN_SECRET_ARN\":\"$PRESIGN_SECRET_ARN\"
   }"
+
+# Reserve concurrency (create-function has no flag for this; it is a
+# separate API call). Use 0 on a fresh AWS account: the account-wide
+# unreserved minimum is 10, so reserving any gets rejected there.
+aws lambda put-function-concurrency \
+  --function-name device-sbom-audit \
+  --reserved-concurrent-executions 10
 
 # The Lambda role needs secretsmanager:GetSecretValue on both ARNs.
 # (Already configured via Terraform; for the CLI flow add it here.)
@@ -500,14 +515,14 @@ aws s3api put-bucket-notification-configuration \
 
 #### Step 2.5: Apply S3 Bucket Policy (Critical Security Hardening)
 
-**IMPORTANT:** This policy provides defense-in-depth against authentication bypass attacks.
+**IMPORTANT:** This policy provides defence-in-depth against authentication bypass attacks.
 
-**Policy Features:**
-- ✅ Denies all cross-account access
-- ✅ Denies direct uploads to `uploads/` prefix (only Lambda execution can write)
-- ✅ Enforces HTTPS/TLS (denies insecure transport)
-- ✅ Enforces AES-256 encryption on all uploads
-- ✅ Uses `aws:userId` for robust principal matching (works with AssumeRole)
+**Policy features:**
+- Denies all cross-account access
+- Denies direct uploads to `uploads/` prefix (only Lambda execution can write)
+- Enforces HTTPS/TLS (denies insecure transport)
+- Enforces AES-256 encryption on all uploads
+- Uses `aws:userId` matching so the rule still applies to AssumeRole/STS sessions
 
 **This policy is now managed in Terraform** ([terraform/s3.tf](terraform/s3.tf), resource `aws_s3_bucket_policy.sbom_bucket_policy`). It is applied automatically by `terraform apply` and does not require a separate manual step. The standalone `s3-bucket-policy.json` template has been removed.
 
@@ -517,10 +532,10 @@ If you are deploying via the legacy AWS CLI flow (not recommended; use Terraform
 - Creates Lambda with embedded SPDX 2.3 schema (no external dependencies)
 - Sets up Function URL with shared token authentication and HMAC-based upload verification
 - Configures S3 to trigger Lambda when files uploaded to `uploads/`
-- Applies maximally hardened bucket policy (5 security controls)
+- Applies the bucket policy described above (five controls)
 - Reserved concurrency (10) prevents runaway costs
 
-**Security Note:** Even if this policy is misconfigured, the HMAC signature verification in Lambda will still block unauthorized uploads (defense-in-depth).
+**Security Note:** Even if this policy is misconfigured, the HMAC signature verification in Lambda will still block unauthorised uploads (defence-in-depth).
 
 ---
 
@@ -536,9 +551,10 @@ If you are deploying via the legacy AWS CLI flow (not recommended; use Terraform
    - **Name:** SPDX SBOM Collection
    - **Script:** Upload `sbom-audit-spdx.sh`
    - **Run frequency:** Daily (script self-throttles to monthly)
-   - **Environment variables (both required):**
+   - **Environment variables (all three required):**
      - `SBOM_AUTH_TOKEN` - Authentication token from Step 2.2
-     - `SBOM_LAMBDA_URL` - Lambda Function URL from Step 1 (e.g., `https://abc123.lambda-url.us-east-1.on.aws/`)
+     - `SBOM_PRESIGN_SECRET` - HMAC presign secret from Step 2.2
+     - `SBOM_LAMBDA_URL` - Lambda Function URL from Step 1 (e.g., `https://abc123.lambda-url.ap-southeast-2.on.aws/`)
    - **Target:** All macOS devices with Nix
 
 **Why daily if it runs monthly?** The MDM runs the script daily, but the script checks `~/.sbom-audit/.last-upload-YYYY-MM` marker and exits early if already run this month. This ensures the script executes within the first few days of each month without manual coordination.
@@ -599,12 +615,13 @@ aws s3 cp /tmp/test-upload.json \
 
 ```bash
 # Test script locally on a device (no auth token needed for test mode)
-sbom-audit-spdx --test
+./sbom-audit-spdx.sh --test
 
 # Test production upload with force mode
-export SBOM_LAMBDA_URL="https://xyz.lambda-url.us-east-1.on.aws/"
+export SBOM_LAMBDA_URL="https://xyz.lambda-url.ap-southeast-2.on.aws/"
 export SBOM_AUTH_TOKEN="<your-token>"
-sbom-audit-spdx --force
+export SBOM_PRESIGN_SECRET="<your-presign-secret>"
+./sbom-audit-spdx.sh --force
 
 # Check S3 for uploaded SBOMs
 aws s3 ls s3://<your-sbom-bucket>/sboms/ --recursive
@@ -617,8 +634,8 @@ aws logs tail /aws/lambda/device-sbom-audit --follow | grep -E "(presigned URL g
 - Test mode: Local SBOM in `$TMPDIR/sbom-test-*/device-{hostname}-{timestamp}.spdx.json`
 - Production: S3 file at `sboms/{device-id}/{timestamp}-{checksum}.json`
 - Lambda logs: 
-  - "presigned URL generated" with `correlation_id` and `sig` in metadata
-  - "SBOM validated and archived" with `upload_correlation_id`
+  - "presigned URL generated" with `correlation_id` (the HMAC `sig` goes into the S3 object metadata)
+  - "SBOM validated and moved" with the same `correlation_id`
 - Direct S3 uploads: AccessDenied or "invalid presign signature" in logs
 
 ---
@@ -639,18 +656,14 @@ aws logs tail /aws/lambda/device-sbom-audit --follow | grep -E "(presigned URL g
    - Validates each SBOM has `.spdxVersion` field (skips invalid outputs)
    - Merges valid SBOMs into single Nix SBOM (non-fatal if parsing fails)
 6. **System scanning:**
-   - Runs `syft scan dir:/` with `taskpolicy -b` for macOS background scheduling (captures Homebrew, pip, npm, Go, etc.)
+   - Runs Syft over a list of known package manager directories (`syft scan dir:<path>` per directory, each only if present) with `taskpolicy -b` for macOS background scheduling
+   - Scan targets: the Homebrew/Workbrew and MacPorts prefixes (`/opt/homebrew`, `/usr/local`, `/opt/workbrew`, `/opt/local`), system framework paths (Python.framework, R.framework, `/Library/Ruby/Gems`, Java extensions), and per-user package and version manager directories (pip/pipx, gems, `go/bin`, Cargo, nvm/npm/yarn/pnpm, Maven/Gradle/SDKMAN, NuGet/dotnet, Composer, conda, pyenv/rbenv/asdf/mise/Volta, and others)
+   - The only Syft exclude is `**/.git/**`. An earlier design scanned `/` with a long exclude list; it was dropped because Syft indexes the whole filesystem before applying excludes, which made scans far too slow
+   - Skips Go's module cache by scanning only `go/bin`; `/nix` is covered separately by sbomnix
    - Suppresses Syft update checks (`SYFT_CHECK_FOR_APP_UPDATE=false`)
-   - Excludes non-package paths:
-     - **User data:** Downloads, Documents, Desktop, Movies, Music, Pictures, Trash
-     - **macOS system:** `/System`, `/private/var`, `/private/etc`, `/private/tmp`, `/Applications`, `Library/Caches`, `Library/Containers`, `Library/Application Support`, TCC-protected `~/Library` directories, Command Line Tools
-     - **Nix:** entire `/nix/` tree (scanned separately by sbomnix), `.cache/nix`, `.nix-profile`
-     - **Package manager caches** (duplicates of repo lock file data already captured by GitHub SBOM): `node_modules`, `.npm`, `.yarn`, `.pnpm-store`, `Library/pnpm`, `.rush`, `.cargo/registry`, `.m2`, `.gradle`, `.nuget`, `.cocoapods`, `.bundle`, `go/pkg/mod`
-     - **Developer tooling:** `.git` directories, Xcode headers/man pages
-     - **Other:** Bitdefender AV signatures (rotates during scan causing race conditions), `CloudStorage`, `.Trashes`
-   - 1-hour watchdog timer kills hung scans
+   - 30-minute watchdog timer per directory kills hung scans; transient indexing errors are retried up to 3 times
    - Test mode: scans `/opt/homebrew/Cellar` or `/usr/local/Cellar` (fails if Homebrew not found)
-   - Captures stderr to log file for debugging (shows last 20 lines on failure, cleans up log after display)
+   - Captures stderr to log file for debugging (shows last 5 lines on failure, cleans up log after display)
 7. **Merging & cleaning:**
    - Forces `spdxVersion: "SPDX-2.3"` on all output
    - Deduplicates by SPDXID or name+version+downloadLocation (preserves packages from different ecosystems)
@@ -670,22 +683,22 @@ aws logs tail /aws/lambda/device-sbom-audit --follow | grep -E "(presigned URL g
 
 **Presign request (POST to Function URL):**
 1. Validates `Authorization: {token}` header (exact match, no "Bearer " prefix)
-2. Logs unauthorized attempts with auth_provided flag (distinguishes missing vs incorrect token)
+2. Logs unauthorised attempts with auth_provided flag (distinguishes missing vs incorrect token)
 3. Validates `Content-Type: application/json`
 4. Validates request body < 10KB
-5. Sanitizes device_id (removes `/`, `\`, `..`, enforces safe charset with regex `^AS[A-Za-z0-9._-]+$`)
+5. Sanitises device_id (removes `/`, `\`, `..`, enforces safe charset with regex `^AS[A-Za-z0-9._-]+$`)
 6. Validates device_id starts with `AS` prefix (rejects before presign to prevent DoS)
-7. Validates checksum present and >= 8 chars
+7. Validates checksum is exactly 64 hex characters (SHA-256)
 8. Generates correlation ID for tracking presign → upload flow
 9. Generates presigned S3 PUT URL (30 min expiry, `uploads/` prefix, includes correlation ID in metadata)
 10. Logs: correlation_id, device_id, s3_key, expires_at, request_bytes
 11. Returns: upload URL, S3 key, expiration time, correlation_id
 
 **S3 event validation (ObjectCreated on uploads/):**
-1. Generates event correlation ID for S3 processing
-2. Validates event bucket matches `SBOM_BUCKET` environment variable (rejects misconfigured S3 notifications)
-3. Validates key has `uploads/` prefix
-4. Downloads SBOM from S3
+1. Validates event bucket matches `SBOM_BUCKET` environment variable (rejects misconfigured S3 notifications)
+2. Validates key has `uploads/` prefix
+3. Downloads SBOM from S3
+4. Reads device ID and correlation ID from the S3 object metadata set at presign (falls back to the key path for device ID), then re-sanitises the device ID
 5. Validates:
    - Size < 75 MB
    - Valid JSON
@@ -698,9 +711,9 @@ aws logs tail /aws/lambda/device-sbom-audit --follow | grep -E "(presigned URL g
    - S3 metadata present (required - detects direct uploads bypassing presigned URL)
    - Checksum matches S3 metadata (required for validation)
    - Device ID starts with `AS`
-6. **If valid:** Copy to `sboms/{device-id}/{timestamp}-{checksum}.json` with AES-256 encryption
+6. **If valid:** Moves to `sboms/{device-id}/{timestamp}-{checksum}.json` with AES-256 encryption (copy, then delete the `uploads/` source)
 7. **If invalid:** Delete from `uploads/` (no retention for security)
-8. Log validation result to CloudWatch with event_correlation_id, upload_correlation_id (from presign), device ID, package count, error details
+8. Logs the outcome to CloudWatch with the correlation_id carried from presign, plus device ID and package count on success ("SBOM validated and moved") or error details on failure ("SBOM validation failed")
 
 **Files in S3:**
 - `uploads/`: Temporary, auto-deleted after 1 day
@@ -714,14 +727,14 @@ aws logs tail /aws/lambda/device-sbom-audit --follow | grep -E "(presigned URL g
 ### Production Mode (Default)
 
 ```bash
-sbom-audit-spdx
+./sbom-audit-spdx.sh
 ```
 
 - Checks monthly marker (exits if already run)
-- Scans entire filesystem (`/`)
+- Scans known package manager directories (Homebrew/Workbrew and MacPorts prefixes, system frameworks, user-level language toolchains) plus the Nix profile via sbomnix
 - Uploads to Lambda/S3
-- Requires `SBOM_LAMBDA_URL` and `SBOM_AUTH_TOKEN` environment variables (configured in your MDM)
-- Validates both environment variables are set (fails with clear error if missing)
+- Requires `SBOM_LAMBDA_URL`, `SBOM_AUTH_TOKEN` and `SBOM_PRESIGN_SECRET` environment variables (configured in your MDM, or read from the System Keychain)
+- Validates the variables are set (fails with clear error if missing)
 - Validates token format (warns if not 32+ hex characters, continues anyway)
 - Creates marker: `~/.sbom-audit/.last-upload-YYYY-MM`
 
@@ -730,7 +743,7 @@ sbom-audit-spdx
 ### Test Mode
 
 ```bash
-sbom-audit-spdx --test
+./sbom-audit-spdx.sh --test
 ```
 
 - Outputs to `$TMPDIR/sbom-test-{timestamp}/`
@@ -739,26 +752,37 @@ sbom-audit-spdx --test
 - **No auth token required** (SBOM_AUTH_TOKEN not needed for test mode)
 - Shows validation summary with package counts
 
+### Test Upload Mode
+
+```bash
+./sbom-audit-spdx.sh --test-upload
+```
+
+- Same fast Cellar-only scan as `--test`, but also uploads the result to Lambda/S3
+- Useful for testing the full end-to-end flow without a full production scan
+- Requires all three environment variables (`SBOM_LAMBDA_URL`, `SBOM_AUTH_TOKEN`, `SBOM_PRESIGN_SECRET`)
+- No monthly check, does not create the monthly marker
+
 ### Force Mode
 
 ```bash
-sbom-audit-spdx --force
+./sbom-audit-spdx.sh --force
 ```
 
 - Bypasses monthly throttle check (runs even if already run this month)
 - Useful for manual re-runs or troubleshooting
-- Requires `SBOM_LAMBDA_URL` and `SBOM_AUTH_TOKEN` environment variables
+- Requires `SBOM_LAMBDA_URL`, `SBOM_AUTH_TOKEN` and `SBOM_PRESIGN_SECRET` environment variables
 - Uploads to Lambda/S3 (same as production mode)
 - **Creates/updates monthly marker file** - Prevents normal scheduled run until next month
 
-**Important:** Using `--force` satisfies the monthly requirement. If you run `--force` on day 15, the scheduled daily run will skip execution until the next month. This is intentional behavior - force mode is a manual override that fulfills the monthly upload requirement.
+**Important:** Using `--force` satisfies the monthly requirement. If you run `--force` on day 15, the scheduled daily run will skip execution until the next month. This is intentional behaviour - force mode is a manual override that fulfils the monthly upload requirement.
 
-**Note:** The `--test` and `--force` flags are mutually exclusive and cannot be used together. The script will exit with an error if both are provided.
+**Note:** The `--test`/`--test-upload` and `--force` flags are mutually exclusive and cannot be used together. The script will exit with an error if both are provided.
 
 ### Clean Utility (Standalone)
 
 ```bash
-sbom-audit-spdx clean INPUT.spdx.json OUTPUT.spdx.json
+./sbom-audit-spdx.sh clean INPUT.spdx.json OUTPUT.spdx.json
 ```
 
 Prepares existing SPDX files for converter compatibility:
@@ -818,26 +842,26 @@ aws secretsmanager put-secret-value \
 
 ### Threat Model
 
-**Protected Against:**
-- ✅ Unauthorized uploads (shared token validation)
-- ✅ Runaway costs (reserved concurrency 10, lifecycle policies)
-- ✅ Data tampering in transit (HTTPS TLS 1.2+)
-- ✅ Large payloads (75 MB hard limit, 10KB presign request limit)
-- ✅ Schema injection (only SPDX 2.3, no remote schema fetching)
-- ✅ Command injection (JSON built with `jq -n --arg`, not string concat)
-- ✅ Path traversal (device IDs sanitized to `[a-zA-Z0-9._-]`, safe directory checks)
-- ✅ Concurrent execution (PID lockfile with stale cleanup)
-- ✅ HTTP header injection (DEVICE_ID stripped of control characters at assignment)
-- ✅ Auth token process list exposure (token passed via `curl --config` file, not CLI args)
-- ✅ Presigned URL exfiltration (upload URL validated against `*.amazonaws.com` over HTTPS)
-- ✅ Credential leakage in logs (error messages never include response bodies or URLs)
+**Protected against:**
+- Unauthorised uploads (shared token validation)
+- Runaway costs (reserved concurrency 10, lifecycle policies)
+- Data tampering in transit (HTTPS TLS 1.2+)
+- Large payloads (75 MB hard limit, 10KB presign request limit)
+- Schema injection (only SPDX 2.3, no remote schema fetching)
+- Command injection (JSON built with `jq -n --arg`, not string concat)
+- Path traversal (device IDs sanitised to `[a-zA-Z0-9._-]`, safe directory checks)
+- Concurrent execution (PID lockfile with stale cleanup)
+- HTTP header injection (DEVICE_ID stripped of control characters at assignment)
+- Auth token process list exposure (token passed via `curl --config` file, not CLI args)
+- Presigned URL exfiltration (upload URL validated against `*.amazonaws.com` over HTTPS)
+- Credential leakage in logs (error messages never include response bodies or URLs)
 
-**Residual Risks:**
-- ⚠️ **Token exposure** - If leaked, anyone can upload until rotation
-- ⚠️ **Device identity spoofing** - Hostname validation is syntactic (AS prefix only)
-- ⚠️ **Single shared token** - All devices use same credential (no per-device isolation)
-- ⚠️ **Supply chain risk** - Script installs sbomnix from `github:tiiuae/sbomnix` without pinning; compromise of that repo is a code execution path on enrolled devices
-- ⚠️ **Homebrew install** - Auto-installs Homebrew/Workbrew via `curl | bash` if not present (standard install method, but inherent supply chain risk)
+**Residual risks:**
+- **Token exposure** - If leaked, anyone can upload until rotation
+- **Device identity spoofing** - Hostname validation is syntactic (AS prefix only)
+- **Single shared token** - All devices use same credential (no per-device isolation)
+- **Supply chain risk** - Script installs sbomnix from `github:tiiuae/sbomnix` without pinning; compromise of that repo is a code execution path on enrolled devices
+- **Homebrew install** - Auto-installs Homebrew/Workbrew via `curl | bash` if not present (standard install method, but inherent supply chain risk)
 
 ### Security Controls
 
@@ -846,33 +870,33 @@ aws secretsmanager put-secret-value \
 - **Constant-time comparisons:** Uses `crypto/subtle` for auth token, checksum, and HMAC signature validation (prevents timing attacks)
 - **Idempotent S3 processing:** Handles `NoSuchKey` gracefully (objects already processed by concurrent invocations)
 - Validates S3 event bucket matches `SBOM_BUCKET` (prevents misconfigured S3 notifications)
-- Sanitizes device IDs on both presign and validation paths (removes `/`, `\`, `..`, enforces safe charset with regex)
-- Re-sanitizes device IDs during S3 validation (defense against direct S3 writes bypassing presign)
+- Sanitises device IDs on both presign and validation paths (removes `/`, `\`, `..`, enforces safe charset with regex)
+- Re-sanitises device IDs during S3 validation (defence against direct S3 writes bypassing presign)
 - Validates checksum format: must be exactly 64 hex characters (SHA-256) to prevent oversized metadata DoS
 - Rejects invalid/unknown device IDs **before** generating presigned URLs (DoS prevention)
 - Enforces AS prefix validation at presign stage (not just validation stage)
 - Requires S3 metadata for checksum and HMAC signature validation (detects and blocks direct uploads)
-- Explicitly enforces AES-256 server-side encryption on validated SBOMs (defense-in-depth)
+- Explicitly enforces AES-256 server-side encryption on validated SBOMs (defence-in-depth)
 - Early validation: Content-Type, body size, checksum format
 - Limits schema validation error logging to 20 errors (prevents log amplification DoS)
 - Only accepts SPDX 2.3 (no version negotiation, no remote schema fetch)
-- Failed auth attempts logged with source IP, device ID, auth_provided flag, and correlation ID
+- Failed auth attempts logged with source IP, device ID, and an auth_provided flag (distinguishes missing vs incorrect token)
 - Correlation IDs track presign → upload flow for debugging (stored in S3 metadata)
 - Logs presign request size (request_bytes) for anomaly detection
 
-**S3 Bucket Policy (Defense-in-Depth):**
+**S3 Bucket Policy (Defence-in-Depth):**
 - **Why necessary:** Without this, anyone with AWS credentials can write directly to `uploads/` prefix
 - **5 security controls:**
   1. Denies all cross-account access (prevents external AWS accounts from accessing bucket)
-  2. Denies direct uploads to `uploads/` unless from the Lambda execution role (blocks other in-account IAM users and roles; the account root principal is implicitly allowed but cannot be denied by a resource policy on a same-account bucket regardless)
+  2. Denies direct uploads to `uploads/` unless from the Lambda execution role (blocks other in-account IAM users and roles). An explicit deny in a same-account bucket policy does bind the account root principal (owners can lock themselves out; root's only exemption is GetBucketPolicy/PutBucketPolicy/DeleteBucketPolicy, so recovery is always possible). Root keeps upload access here only because the `aws:userId` condition explicitly includes the account ID.
   3. Enforces HTTPS/TLS for all operations (prevents plaintext transmission)
   4. Enforces AES-256 encryption on all uploads (ensures encryption at rest)
-  5. Uses `aws:userId` matching for robust principal validation (works with AssumeRole/STS)
+  5. Uses `aws:userId` matching so the rules still apply to AssumeRole/STS sessions
 - **Relationship to HMAC:** Provides infrastructure-level protection; HMAC provides application-level cryptographic verification (two independent layers)
 
 **Script:**
 - JSON payloads built with `jq -n --arg` (prevents injection)
-- Device ID sanitized to `[a-zA-Z0-9._-]` at assignment (prevents header injection and path traversal)
+- Device ID sanitised to `[a-zA-Z0-9._-]` at assignment (prevents header injection and path traversal)
 - Auth token passed to curl via `chmod 600` config file, not command-line args (not visible in `ps`)
 - Upload URL validated: host must end with `.amazonaws.com` over HTTPS (prevents exfiltration via compromised Lambda)
 - Error messages never include response bodies or presigned URLs (prevents credential leakage in logs)
@@ -886,9 +910,9 @@ aws secretsmanager put-secret-value \
 - Validates sbomnix output is valid SPDX before merging (skips invalid packages)
 - Environment variables for auth token and Lambda URL (not hardcoded)
 - Syft stderr captured to log file for debugging scan failures (auto-cleaned after display)
-- Syft runs with background QoS (`taskpolicy -b`) to minimize impact on user experience
-- Syft watchdog timer (1 hour) prevents indefinite hangs
-- Extensive filesystem excludes: skips macOS system paths, package manager caches (already captured by GitHub SBOM via lock files), app sandbox containers, developer tool caches (`.git`, Xcode headers), and Bitdefender AV signatures (race conditions)
+- Syft runs with background QoS (`taskpolicy -b`) to minimise impact on user experience
+- Syft watchdog timer (30 minutes per scanned directory) prevents indefinite hangs
+- Bounded scan scope: only known package manager directories are read (never user documents, mail, or app data), with `**/.git/**` excluded
 
 ---
 
@@ -909,19 +933,19 @@ if version != "2.3" {
 ```
 
 **Validated:**
-- ✅ SPDX version exactly "SPDX-2.3" (other versions rejected)
-- ✅ Document structure (official SPDX 2.3 schema)
-- ✅ Required fields (SPDXID, spdxVersion, name, dataLicense, documentNamespace)
-- ✅ Relationship types and license expression syntax
-- ✅ SPDXID must be "SPDXRef-DOCUMENT"
-- ✅ Package count < 50,000
-- ✅ Package field lengths (name ≤ 500, versionInfo ≤ 100, SPDXID ≤ 500 chars)
-- ✅ Checksum verification (if S3 metadata present)
+- SPDX version exactly "SPDX-2.3" (other versions rejected)
+- Document structure (official SPDX 2.3 schema)
+- Required fields (SPDXID, spdxVersion, name, dataLicense, documentNamespace)
+- Relationship types and license expression syntax
+- SPDXID must be "SPDXRef-DOCUMENT"
+- Package count < 50,000
+- Package field lengths (name ≤ 500, versionInfo ≤ 100, SPDXID ≤ 500 chars)
+- Checksum verification (if S3 metadata present)
 
-**Not Validated:**
-- ❌ License IDs against SPDX license list
-- ❌ PURL format (package URLs)
-- ❌ Package existence in registries
+**Not validated:**
+- License IDs against SPDX license list
+- PURL format (package URLs)
+- Package existence in registries
 
 **Performance:** ~500ms total per SBOM (schema validation ~100-200ms, S3 ops ~200-500ms)
 
@@ -950,15 +974,15 @@ Script implements fixes for https://tools.spdx.org/app/convert/:
 
 ```bash
 # Create SNS topic
-aws sns create-topic --name sbom-spdx-alerts
+aws sns create-topic --name device-sbom-audit-alerts
 aws sns subscribe \
-  --topic-arn arn:aws:sns:REGION:ACCOUNT_ID:sbom-spdx-alerts \
+  --topic-arn arn:aws:sns:REGION:ACCOUNT_ID:device-sbom-audit-alerts \
   --protocol email \
   --notification-endpoint <your-alerts-email>
 
 # Alarm: Validation failures
 aws cloudwatch put-metric-alarm \
-  --alarm-name sbom-spdx-errors \
+  --alarm-name device-sbom-audit-errors \
   --metric-name Errors \
   --namespace AWS/Lambda \
   --statistic Sum \
@@ -966,31 +990,31 @@ aws cloudwatch put-metric-alarm \
   --threshold 5 \
   --comparison-operator GreaterThanThreshold \
   --dimensions Name=FunctionName,Value=device-sbom-audit \
-  --alarm-actions arn:aws:sns:REGION:ACCOUNT_ID:sbom-spdx-alerts
+  --alarm-actions arn:aws:sns:REGION:ACCOUNT_ID:device-sbom-audit-alerts
 
 # Alarm: Lambda throttling
 aws cloudwatch put-metric-alarm \
-  --alarm-name sbom-spdx-throttles \
+  --alarm-name device-sbom-audit-throttles \
   --metric-name Throttles \
   --namespace AWS/Lambda \
   --statistic Sum \
   --period 300 \
-  --threshold 10 \
-  --comparison-operator GreaterThanThreshold \
+  --threshold 1 \
+  --comparison-operator GreaterThanOrEqualToThreshold \
   --dimensions Name=FunctionName,Value=device-sbom-audit \
-  --alarm-actions arn:aws:sns:REGION:ACCOUNT_ID:sbom-spdx-alerts
+  --alarm-actions arn:aws:sns:REGION:ACCOUNT_ID:device-sbom-audit-alerts
 
 # Alarm: High volume (potential abuse)
 aws cloudwatch put-metric-alarm \
-  --alarm-name sbom-spdx-high-volume \
+  --alarm-name device-sbom-audit-high-volume \
   --metric-name Invocations \
   --namespace AWS/Lambda \
   --statistic Sum \
   --period 3600 \
-  --threshold 50 \
+  --threshold 200 \
   --comparison-operator GreaterThanThreshold \
   --dimensions Name=FunctionName,Value=device-sbom-audit \
-  --alarm-actions arn:aws:sns:REGION:ACCOUNT_ID:sbom-spdx-alerts
+  --alarm-actions arn:aws:sns:REGION:ACCOUNT_ID:device-sbom-audit-alerts
 ```
 
 ### CloudWatch Logs Insights
@@ -1053,18 +1077,18 @@ fields @timestamp, @message
 
 ### Cost Estimate
 
-Based on 50 devices uploading monthly (1.3 MB average):
+Based on 50 devices uploading monthly (~3.5 MB average, the typical developer machine figure above):
 
 | Service | Usage | Monthly Cost |
 |---------|-------|--------------|
 | Lambda invocations | 100/month (presign + validate) | Free tier |
-| Lambda compute | ~1 sec × 100 = 100 GB-sec | Free tier |
-| S3 storage | 65 MB standard | $0.01 |
+| Lambda compute | 0.5 GB × ~1 sec × 100 = 50 GB-sec | Free tier |
+| S3 storage | ~525 MB standard (steady state; 90 days before Glacier) | ~$0.01-0.02 |
 | S3 requests | 200 (PUT + GET) | <$0.01 |
 | S3 Glacier (90d+) | Minimal | <$0.01 |
-| **Total** | | **~$0.02/month** |
+| **Total** | | **~$0.03/month** |
 
-**100 devices:** ~$0.04/month (still under free tier)
+**100 devices:** ~$0.05/month (still under free tier)
 
 ---
 
@@ -1088,7 +1112,7 @@ Based on 50 devices uploading monthly (1.3 MB average):
 - Increase to larger subset
 - Monitor load distribution (verify random delay effectiveness)
 - Check CloudWatch metrics for patterns
-- Verify bucket policy blocks unauthorized uploads
+- Verify bucket policy blocks unauthorised uploads
 
 **Success Criteria:**
 - Lambda concurrency stays below 10
@@ -1115,7 +1139,7 @@ aws cloudwatch get-metric-statistics \
   --namespace AWS/Lambda \
   --metric-name Errors \
   --dimensions Name=FunctionName,Value=device-sbom-audit \
-  --start-time $(date -u -d '1 day ago' +%Y-%m-%dT%H:%M:%S) \
+  --start-time $(date -u -v-1d +%Y-%m-%dT%H:%M:%S) \
   --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
   --period 3600 \
   --statistics Sum
@@ -1125,7 +1149,7 @@ aws cloudwatch get-metric-statistics \
   --namespace AWS/Lambda \
   --metric-name Throttles \
   --dimensions Name=FunctionName,Value=device-sbom-audit \
-  --start-time $(date -u -d '1 day ago' +%Y-%m-%dT%H:%M:%S) \
+  --start-time $(date -u -v-1d +%Y-%m-%dT%H:%M:%S) \
   --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
   --period 3600 \
   --statistics Sum
@@ -1140,13 +1164,13 @@ aws cloudwatch get-metric-statistics \
 ### Success Metrics (After 30 Days)
 
 Verify the following targets are met:
-- ✅ **Coverage:** All active devices uploaded at least once
-- ✅ **Reliability:** Lambda error rate < 1%
-- ✅ **Performance:** Lambda throttle rate = 0
-- ✅ **Data quality:** Average SBOM size 1-3 MB, package count 1,000-2,000
-- ✅ **Cost:** S3 storage within budget (~$0.02-0.04/month)
-- ✅ **Security:** Zero "invalid presign signature" errors from legitimate devices
-- ✅ **Traceability:** Correlation ID coverage > 95% (can trace presign → upload)
+- **Coverage:** All active devices uploaded at least once
+- **Reliability:** Lambda error rate < 1%
+- **Performance:** Lambda throttle rate = 0
+- **Data quality:** SBOM size and package count in the expected range (a typical developer machine reports ~3.5 MB and 4,500+ packages; a lightly used machine reports less)
+- **Cost:** S3 storage within budget (~$0.03-0.05/month)
+- **Security:** Zero "invalid presign signature" errors from legitimate devices
+- **Traceability:** Correlation ID coverage > 95% (can trace presign → upload)
 
 ### Rollback Procedure
 
@@ -1211,14 +1235,14 @@ aws logs tail /aws/lambda/device-sbom-audit --follow
 
 ### Converter Fails with Duplicate License
 
-Should be fixed by normalization, but if persists:
+Should be fixed by normalisation, but if persists:
 
 ```bash
 # Check for duplicates
 jq -r '.hasExtractedLicensingInfos[]? | .licenseId' sbom.spdx.json | sort | uniq -c
 
 # Manual cleanup
-sbom-audit-spdx clean input.spdx.json output.spdx.json
+./sbom-audit-spdx.sh clean input.spdx.json output.spdx.json
 ```
 
 ### Script Runs Every Day Instead of Monthly
@@ -1228,21 +1252,21 @@ Monthly throttling uses `~/.sbom-audit/.last-upload-YYYY-MM` markers. Check:
 - `~/.sbom-audit` writable and persistent between runs
 - No multiple MDM policies deploying different versions
 
-**To force a manual re-run:** Use `sbom-audit-spdx --force` to bypass the monthly check.
+**To force a manual re-run:** Use `./sbom-audit-spdx.sh --force` to bypass the monthly check.
 
 ### Syft Scan Fails
 
-Syft stderr is captured during the scan and displayed on failure (last 20 lines). The error log is cleaned up automatically after display.
+Syft stderr is captured during the scan and displayed on failure (last 5 lines). The error log is cleaned up automatically after display.
 
 ```bash
 # Common issues:
 # - "operation not permitted" warnings for /Library/* paths are harmless (SIP/TCC)
-# - Bitdefender signature rotation can cause race conditions (excluded via --exclude)
-# - /System, /private/var, /private/etc, /private/tmp are excluded (SIP-protected, no packages)
-# - Package manager caches (.npm, node_modules, .m2, .gradle, etc.) are excluded
-#   (these duplicate what GitHub SBOM captures from lock files)
-# - 1-hour watchdog timer kills hung scans ("Syft scan timed out")
-# - Typical scan completes in ~5 minutes with current excludes
+# - Directories that vanish mid-scan (caches, temp files) can fail Syft's indexer;
+#   the script retries each directory up to 3 times on transient path errors
+# - The scan only reads known package manager directories; /System, user documents
+#   and app data are never scanned, and **/.git/** is excluded
+# - 30-minute per-directory watchdog kills hung scans ("Syft scan timed out")
+# - Typical full scan completes in ~5 minutes
 ```
 
 ### LAMBDA_URL Not Configured
@@ -1278,7 +1302,7 @@ jq -e '.spdxVersion' ~/.sbom-audit/nix-pkg-0-*.spdx.json
 ```bash
 # Test auth token (only production mode requires token; help, clean, and test modes work without token)
 export SBOM_AUTH_TOKEN="your-token"
-sbom-audit-spdx  # Production mode - requires token
+./sbom-audit-spdx.sh  # Production mode - requires token
 
 # Check Lambda logs for auth failures (look for correlation_id to track requests)
 aws logs tail /aws/lambda/device-sbom-audit --follow | grep "unauthorized"
@@ -1297,6 +1321,9 @@ aws secretsmanager get-secret-value \
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `s3_bucket_name` | `device-sbom-audit.example.com` | SBOM bucket name. Must be overridden: bucket names are globally unique, so the placeholder default will fail to create. The access-logs bucket is derived as `<s3_bucket_name>-access-logs`. |
+| `lambda_reserved_concurrency` | none (required) | Reserved concurrency for the Lambda. Must be `0` (no reservation, use on a fresh AWS account where the account-wide unreserved minimum blocks reservations) or `10` (mature production account). A bare `terraform apply` prompts for it. |
+| `aws_region` | `ap-southeast-2` | AWS region for all resources in the stack. |
 | `alert_email` | `""` (empty) | If set, subscribes this email to the SNS topic `device-sbom-audit-alerts` and receives every CloudWatch alarm notification. Pass via `terraform apply -var "alert_email=..."` or a `terraform.tfvars` file. |
 
 ### Lambda Environment Variables
@@ -1334,8 +1361,8 @@ aws secretsmanager get-secret-value \
 | `LAMBDA_URL` | Reads from `SBOM_LAMBDA_URL` environment variable |
 | `DEVICE_ID` | Device identifier (default: hostname) |
 | Working dir | Production: `~/.sbom-audit`, Test: `$TMPDIR/sbom-test-*` |
-| Scan path | Production: `/` (full), Test: `/opt/homebrew/Cellar` (fast) |
-| Syft timeout | 1-hour watchdog timer (kills hung scans) |
+| Scan paths | Production: known package manager directories (Homebrew/Workbrew, MacPorts, system frameworks, user toolchains), Test: `/opt/homebrew/Cellar` (fast) |
+| Syft timeout | 30-minute watchdog timer per scanned directory (kills hung scans) |
 | Syft scheduling | `taskpolicy -b` (macOS background QoS) |
 
 ---
@@ -1400,7 +1427,7 @@ x-amz-meta-checksum: sha256-hex-string
 ## References
 
 - [SPDX Specification 2.3](https://spdx.github.io/spdx-spec/v2.3/)
-- [SPDX JSON Schema](https://github.com/spdx/spdx-spec/tree/development/v2.3/schemas)
+- [SPDX JSON Schema](https://github.com/spdx/spdx-spec/tree/support/2.3/schemas)
 - [Syft Documentation](https://github.com/anchore/syft)
 - [sbomnix Documentation](https://github.com/tiiuae/sbomnix)
 - [SPDX Online Tools](https://tools.spdx.org/)

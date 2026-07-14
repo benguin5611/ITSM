@@ -2,12 +2,12 @@
 #
 # Restrict the special-char set to characters that survive shell-quoted
 # contexts, HTTP header values, and curl --config file parsing without
-# escaping surprises. The default special-char set includes `"`, `\`,
-# `$`, and backtick — all of which can cause silent fleet-availability
+# escaping surprises. The default special-char set includes `!`, `$`,
+# `&`, `*`, and `?`, all of which can cause silent fleet-availability
 # bugs when interpolated through bash, curl config files, or future
 # refactors that drop into eval/echo.
 #
-# 64 chars × 64-char alphabet ≈ 384 bits of entropy, comfortably above
+# 64 chars × 66-char alphabet ≈ 387 bits of entropy, comfortably above
 # what HMAC-SHA256 or any practical bearer token needs.
 resource "random_password" "auth_token" {
   length           = 64
@@ -117,4 +117,16 @@ resource "aws_lambda_permission" "function_url_invoke" {
   function_name          = aws_lambda_function.sbom_validator.function_name
   principal              = "*"
   function_url_auth_type = "NONE"
+}
+
+# Function URLs created after October 2025 also require lambda:InvokeFunction
+# alongside lambda:InvokeFunctionUrl; without it fresh deploys return 403.
+# invoked_via_function_url scopes the grant to calls made through the URL,
+# so this does not open up direct Invoke API access.
+resource "aws_lambda_permission" "function_url_invoke_function" {
+  statement_id             = "FunctionURLInvokeAllowPublicAccess"
+  action                   = "lambda:InvokeFunction"
+  function_name            = aws_lambda_function.sbom_validator.function_name
+  principal                = "*"
+  invoked_via_function_url = true
 }

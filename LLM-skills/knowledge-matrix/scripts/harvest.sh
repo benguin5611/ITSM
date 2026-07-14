@@ -24,6 +24,9 @@ PR_FIELDS='
 page=0; cursor=""
 while : ; do
   page=$((page+1))
+  # pass the pagination cursor as a properly quoted array element (no word-splitting on API-derived data)
+  cursor_args=()
+  if [ -n "$cursor" ]; then cursor_args=(-F "cursor=$cursor"); fi
   if [ "$MODE" = "all" ]; then
     resp=$(gh api graphql -f query="
       query(\$owner:String!,\$name:String!,\$cursor:String){
@@ -33,7 +36,7 @@ while : ; do
             nodes{ $PR_FIELDS }
           }
         }
-      }" -F owner="$OWNER" -F name="$NAME" $( [ -n "$cursor" ] && echo "-F cursor=$cursor" ) 2>/dev/null || true)
+      }" -F owner="$OWNER" -F name="$NAME" ${cursor_args[@]+"${cursor_args[@]}"} 2>/dev/null || true)
     echo "$resp" | jq -c '.data.repository.pullRequests.nodes[]?' >> "$OUT" 2>/dev/null || true
     hasNext=$(echo "$resp" | jq -r '.data.repository.pullRequests.pageInfo.hasNextPage // "false"')
     cursor=$(echo "$resp" | jq -r '.data.repository.pullRequests.pageInfo.endCursor // ""')
@@ -45,7 +48,7 @@ while : ; do
           pageInfo{hasNextPage endCursor}
           nodes{ ... on PullRequest { $PR_FIELDS } }
         }
-      }" -F q="$Q" $( [ -n "$cursor" ] && echo "-F cursor=$cursor" ) 2>/dev/null || true)
+      }" -F q="$Q" ${cursor_args[@]+"${cursor_args[@]}"} 2>/dev/null || true)
     echo "$resp" | jq -c '.data.search.nodes[]? | select(.number)' >> "$OUT" 2>/dev/null || true
     hasNext=$(echo "$resp" | jq -r '.data.search.pageInfo.hasNextPage // "false"')
     cursor=$(echo "$resp" | jq -r '.data.search.pageInfo.endCursor // ""')

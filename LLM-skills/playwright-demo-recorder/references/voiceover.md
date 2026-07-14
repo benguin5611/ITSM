@@ -2,7 +2,7 @@
 
 ## ⚠️ Apple System Voices: personal, non-commercial use ONLY
 
-**Verified against the primary source 2026-07-10** — Apple macOS Software License Agreement (Sequoia), §2.F "Voices; Live Captions" (https://www.apple.com/legal/sla/docs/macOSSequoia.pdf):
+**Verified against the primary source 2026-07-14** — Apple macOS Software License Agreement (Tahoe), §2.F "Voices; Live Captions" (https://www.apple.com/legal/sla/docs/macOSTahoe.pdf), the SLA governing the tested baseline (macOS 26, Tahoe). The Sequoia SLA carries the same clause at the same section (verified 2026-07-10):
 
 > "…you may: (i) use the system voices included in the Apple Software ("System Voices") (1) while running the Apple Software and (2) to create your own original content and projects for your **personal, non-commercial use** … **No other creation or use of the System Voices** … is permitted by this License, including but not limited to the use, reproduction, display, performance, **recording, publishing or redistribution** of any of the System Voices … **in a profit, non-profit, public sharing or commercial context**."
 
@@ -10,7 +10,7 @@ What this means for this skill:
 
 - `say`-generated narration (including Karen (Premium)) is fine for **local iteration and personal preview**.
 - **Any video that will be shared in a business context — to colleagues, customers, prospects, socials, docs sites — is not covered by the licence.** "Non-profit" and "public sharing" are explicitly excluded too, so there is no safe "it's only internal/free" reading.
-- **Before a video leaves your machine, regenerate the narration with a commercially licensed TTS** (e.g. OpenAI TTS or ElevenLabs with a commercial plan — both licence generated audio for commercial use; verify the current terms of whichever you choose) — or deliver the silent version.
+- **Before a video leaves your machine, regenerate the narration with a commercially licensed TTS** (e.g. OpenAI TTS or ElevenLabs with a commercial plan — both license generated audio for commercial use; verify the current terms of whichever you choose) — or deliver the silent version.
 - The swap is one function: `speak()` is the only place audio is generated. Replace the `say` invocation with an API call that writes an audio file, keep returning the ffprobe duration, and the pacing/mux pipeline is unchanged.
 
 The skill's Phase 4/5 delivery gate must state which voice source the final video used.
@@ -29,8 +29,8 @@ Narration length is the pacing lever: keep lines ≤ ~12 words (see demo-plannin
 
 ## The exact voice, and why the gate is strict
 
-- Voice: **`Karen (Premium)`** (en_AU), rate 190 wpm. The Premium tier is a **downloadable asset**: System Settings → Accessibility → Read & Speak (older macOS: Spoken Content) → System voice → Manage Voices… (Apple's guide: https://support.apple.com/guide/mac-help/mchlp2290/mac). The compact default "Karen" sounds robotic — not acceptable output.
-- **`say` exits 0 even when the requested voice doesn't exist** (machine-verified: `say -v 'ZZZBogus' -o out.aiff` succeeds) and silently substitutes another voice. Presence of `say` proves nothing. The preflight gate must exact-match the voice string in `say -v '?'` output and **abort with the download path — never substitute**.
+- Voice: **`Karen (Premium)`** (en_AU), rate 190 wpm. The Premium tier is a **downloadable asset**: System Settings → Accessibility → Read & Speak (older macOS: Spoken Content) → System voice → info button (ⓘ) to download voices; on macOS 14 and earlier it's Manage Voices… in the System voice pop-up (Apple's guide: https://support.apple.com/guide/mac-help/mchlp2290/mac). The compact default "Karen" sounds robotic — not acceptable output.
+- **`say` exits 0 even when the requested voice doesn't exist** (machine-verified: `say -v 'ZZZBogus' -o out.aiff hello` succeeds) and silently substitutes another voice. Presence of `say` proves nothing. The preflight gate must exact-match the voice string in `say -v '?'` output and **abort with the download path — never substitute**.
 
 ## Pronunciation map (`SPEECH_MAP`)
 

@@ -140,6 +140,8 @@ http://(?!localhost|127\.0\.0\.1|0\.0\.0\.0)
 verify\s*=\s*False|InsecureSkipVerify.*true|NODE_TLS_REJECT_UNAUTHORIZED.*0
 ```
 
+The first pattern's negative lookahead needs a PCRE engine (`grep -P` or `rg --pcre2`); plain `grep -E` and default `rg` reject it.
+
 ## False Positive Guidance
 
 - MD5/SHA1 for non-security checksums (file deduplication, cache keys, ETags) is acceptable

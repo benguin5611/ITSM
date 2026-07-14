@@ -11,8 +11,8 @@
   Fill every section. Delete a section only if you can justify why it does not apply — do not leave
   it blank. Keep it grounded in the real code: every behavioural claim must be checkable against a
   file:line anchor at the baseline SHA below. If prose and code ever disagree, CODE WINS — fix the
-  prose. Australian English throughout. Headings are descriptive, never numbered; the only numbered
-  things in this document are the entries in the security finding ledger.
+  prose. Australian English throughout. Headings are descriptive, never numbered; numbered lists
+  are reserved for the end-to-end walkthrough steps and the security finding ledger.
 -->
 
 # <feature name> — specification

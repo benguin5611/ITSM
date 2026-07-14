@@ -135,6 +135,25 @@ data "aws_iam_policy_document" "access_logs" {
       values   = [data.aws_caller_identity.current.account_id]
     }
   }
+
+  # Mirror the SBOM bucket: refuse any plaintext-HTTP access.
+  statement {
+    sid       = "DenyInsecureTransport"
+    effect    = "Deny"
+    actions   = ["s3:*"]
+    resources = [aws_s3_bucket.access_logs.arn, "${aws_s3_bucket.access_logs.arn}/*"]
+
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
+  }
 }
 
 resource "aws_s3_bucket_policy" "access_logs" {

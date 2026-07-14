@@ -126,7 +126,7 @@ Three situations meet in this feature, each with a different person in it:
 
 ## Version 3 — condensed (the target)
 
-*Roughly 40% shorter than Version 2. Every job story from Version 1 survives — ten in, ten out. One grounding example per section. This is the shape every write-up should ship in.*
+*Roughly half the length of Version 2. Every job story from Version 1 survives — ten in, ten out. One grounding example per section. This is the shape every write-up should ship in.*
 
 ### Jobs to be Done
 
@@ -142,11 +142,11 @@ Get a document to (or from) an outside party — granting access to exactly what
 
 **Job stories**
 
-The owner: When I need to get a file to an outsider, I want to share just that file, so I can hand it over without exposing everything around it; when I set it up, I want to control how long it stays open, so it can't linger past its reason; when I re-share to a prior recipient, I want the old link dead, so a stale link can't be reused; when a project wraps up, I want access to switch off on its own, so no outsider is left with a way in; and when access expires mid-task, I want to extend or re-issue it without starting over.
+The owner: When I need to get a file to an outsider, I want to share just that file, so I can hand it over without exposing everything around it; when I set it up, I want to control how long it stays open, so it can't linger past its reason; when I re-share to a prior recipient, I want the old link dead, so a stale link can't be reused; when a project wraps up, I want access to switch off on its own, so no outsider is left with a way in; and when access expires mid-task, I want to extend or re-issue it without starting over, so I can keep things moving.
 
-The recipient: When I'm sent something, I want to open it without creating an account; when I come back to finish, I want my access to still work or be easy to renew; and when I open a share, I want to see plainly what I've been given and for how long.
+The recipient: When I'm sent something, I want to open it without creating an account, so I can get to it without another login to manage; when I come back to finish, I want my access to still work or be easy to renew, so I can pick up where I left off; and when I open a share, I want to see plainly what I've been given and for how long, so I can plan around it.
 
-The administrator: When there's a security review, I want to answer "who had access, and when?" in one place; and whenever people share externally, I want them kept within the organisation's rules, so no one over-shares by accident.
+The administrator: When there's a security review, I want to answer "who had access, and when?" in one place, so I can show sharing was controlled; and whenever people share externally, I want them kept within the organisation's rules, so no one over-shares by accident.
 
 **Emotional and social jobs**
 

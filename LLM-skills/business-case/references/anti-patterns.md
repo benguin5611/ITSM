@@ -92,7 +92,7 @@ Read this before starting AND check it again before publishing. Each pattern bel
 
 ## 9. Vendor Marketing Names vs Official Names
 
-**Wrong:** Using "Cloudflare Zero Trust" when the product is now officially "Cloudflare One."
+**Wrong:** Calling the whole platform "Cloudflare Zero Trust" when the vendor's docs and dashboard brand the umbrella platform "Cloudflare One" (Zero Trust survives as a sub-brand and in plan names).
 
 **Right:** Check the vendor's current website and use their official product name.
 

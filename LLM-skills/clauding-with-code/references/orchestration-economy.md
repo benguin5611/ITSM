@@ -1,6 +1,6 @@
 # Orchestration economy — running a multi-agent fan-out cheaply AND reliably
 
-Multi-agent orchestration is powerful and expensive. Every rule below was paid for in a real failure: a run that timed out, hung silently, burned hours of wall-clock, or re-ran a finished job. The two failure axes are **cost** (wall-clock + tokens) and **reliability** (does it finish, and do you know when it has?). Treat them together — a "comprehensive" run that stalls at hour three is the worst of both. (Process only — for a worked instance with real numbers, see `references/project-binding.md`.)
+Multi-agent orchestration is powerful and expensive. Every rule below was paid for in a real failure: a run that timed out, hung silently, burned hours of wall-clock, or re-ran a finished job. The two failure axes are **cost** (wall-clock + tokens) and **reliability** (does it finish, and do you know when it has?). Treat them together — a "comprehensive" run that stalls at hour three is the worst of both. (Process only — record your worked instance with real numbers in `references/project-binding.md`.)
 
 ## 1. Budget up front — cost is a first-class constraint
 **Why:** an unbounded "be thorough" instinct produced a ~178-agent, ~5-hour run for one feature. It was not 178 agents' worth of signal; it was an order of magnitude past the point of diminishing returns, and most of the cost was queue tail and duplicated reads.

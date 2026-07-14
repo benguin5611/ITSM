@@ -29,7 +29,7 @@
 *Instructions for the two audiences: humans applying the record, and LLMs ingesting it during a fresh review.*
 
 - **Reviewing the artefact?** Read §4 (Applied) and §5 (Standing rejections). If a new finding matches anything in §5, point at this file rather than re-raising. If it matches §4, the change is already in.
-- **Running a new adversarial pass?** Read §5 and §7 (Methodology lessons) before kicking off agents. Include §4 and §5 in each agent's context as anti-noise priming ("items confirmed applied / explicitly rejected — do not re-raise without new evidence").
+- **Running a new adversarial pass?** Read §5 and §7 (Methodology lessons) before kicking off agents. Include §4–§7 in each agent's context as anti-noise priming ("items confirmed applied / explicitly rejected — do not re-raise without new evidence").
 - **Looking up a single finding?** Use the indexes (§4–§6) to find the ID, then read its canonical record in §9. Older IDs are stable — they appear in cross-references and external systems.
 - **Adding a new pass?** Append canonical records to §9 with new IDs, update the indexes in §4–§6, and append the pass write-up to §11 (audit trail).
 - **For LLM ingestion:** §1–§8 contain the actionable current state. §9 is per-finding detail (read on lookup). §10–§11 are historical (read only for traceability).
@@ -133,7 +133,7 @@
 
 *By pass 2 or 3, a substantial fraction of agent findings re-raise items already rejected or already applied. This wastes review cycles and creates noise that obscures genuinely new findings.*
 
-**Apply:** include §4 (Applied) and §5 (Standing rejections) of this file in each agent's context, framed as "items confirmed applied / explicitly rejected; do not re-raise without new evidence."
+**Apply:** include §4 (Applied), §5 (Standing rejections), §6 (Accepted residuals), and §7 (Methodology lessons) of this file in each agent's context, framed as "items confirmed applied / explicitly rejected; do not re-raise without new evidence."
 
 ### L-VERIFY-CITATIONS — agents misquote the artefact
 

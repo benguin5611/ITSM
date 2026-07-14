@@ -1,6 +1,6 @@
 # A06:2025 — Insecure Design
 
-Insecure design is a broad category focusing on risks related to design and architectural flaws. It calls for more use of threat modeling, secure design patterns, and reference architectures. Unlike implementation bugs, insecure design cannot be fixed by a perfect implementation — the flaw is in the design itself.
+Insecure design is a broad category focusing on risks related to design and architectural flaws. It calls for more use of threat modelling, secure design patterns, and reference architectures. Unlike implementation bugs, insecure design cannot be fixed by a perfect implementation — the flaw is in the design itself.
 
 ## CWE Mappings
 
@@ -49,7 +49,7 @@ Vulnerable:
 fetch('/api/admin/users');
 ```
 
-Every client-side authorization check must have a corresponding server-side check.
+Every client-side authorisation check must have a corresponding server-side check.
 
 ### Business Logic Abuse
 
@@ -152,7 +152,7 @@ if (!user || !passwordMatch) return res.status(401).json({ error: 'Invalid crede
 
 ## False Positive Guidance
 
-- Client-side authorization checks for UI rendering (hiding buttons) are fine IF server-side checks also exist
+- Client-side authorisation checks for UI rendering (hiding buttons) are fine IF server-side checks also exist
 - Rate limiting may be handled at the infrastructure level (API gateway, CDN, load balancer) rather than in application code
 - Some enumeration is acceptable for UX (e.g., "email already registered" on signup) — context matters
 - Internal APIs behind authentication may have lighter rate limiting requirements

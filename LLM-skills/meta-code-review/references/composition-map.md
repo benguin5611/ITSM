@@ -6,7 +6,7 @@ meta-code-review composes existing skills; it does not review directly. Pick by 
 | Scope / artefact | Lens(es) | Run via |
 |---|---|---|
 | Plan / design / strategy soundness | `rainbow-team-review` (adversarial, 10 roles + Judge) | interactive (or workflow for the full panel) |
-| Whole-codebase / cross-cutting security | a stack-specific security-audit skill (e.g. `owasp-top-10`'s deep mode) | workflow (heavy) |
+| Whole-codebase / cross-cutting security | a stack-specific security-audit skill (or `owasp-top-10` run over the whole tree rather than only the changed files) | workflow (heavy) |
 | Changed-files / PR security | `owasp-top-10` | interactive |
 | Complexity / cleanup of changed code | `/simplify` | interactive |
 | Dead / orphaned code after deletions | in-house dead-code swarm (finders → collator → grudge arbiter) | workflow (heavy) |

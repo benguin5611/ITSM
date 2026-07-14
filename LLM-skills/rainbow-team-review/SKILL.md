@@ -26,8 +26,7 @@ domain-agnostically so it applies equally to code architecture, business strateg
 product launches, policy changes, and anything else where a careful adversarial pass before
 commitment is valuable.
 
-Also known as "Release the Benji" — the activation phrase the skill was originally named after,
-honouring the team member who was already doing this in every meeting anyway.
+Also known as "Release the Benji", the activation phrase the skill was originally named after.
 
 ## Colour quick reference
 

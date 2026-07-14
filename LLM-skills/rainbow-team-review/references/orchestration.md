@@ -47,7 +47,7 @@ Local runtimes have `Read`/`Write`/`Bash`/`Edit` tool access. Web runtimes (Clau
 
 The file is named `<artefact-stem>-decisions.md`. The stem identifies the project so subsequent runs find the same file. Derive it from:
 
-1. The plan file path if one was provided (`workspace-sharing-otp-plan.md` → stem `workspace-sharing-otp-plan`).
+1. The plan file path if one was provided (`customer-portal-launch-plan.md` → stem `customer-portal-launch-plan`).
 2. An explicit identifier the user provided (e.g. "this is the Q4 pricing plan" → stem `q4-pricing-plan`).
 3. Otherwise ask: *"What's a short identifier for this project? I'll use it to name the decision record (e.g. `q4-pricing-plan` → `q4-pricing-plan-decisions.md`)."*
 

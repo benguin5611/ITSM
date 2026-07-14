@@ -62,7 +62,7 @@ One or two per situation, one line each. If a situation has no genuine emotional
 
 ### 5. Forces of progress
 
-Why they switch, and why they don't (Christensen's four forces). Keep it tight — a line each, only the forces that are real:
+Why they switch, and why they don't (the four forces of progress, developed by Bob Moesta and Chris Spiek and popularised in Christensen's *Competing Against Luck*). Keep it tight — a line each, only the forces that are real:
 
 - **Push** — the pain of the current situation that drives them off the status quo.
 - **Pull** — the appeal of a better way.

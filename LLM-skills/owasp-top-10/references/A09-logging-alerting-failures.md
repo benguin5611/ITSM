@@ -44,7 +44,7 @@ logger.debug('Request body:', sanitizeForLogging(req.body));
 
 Events that MUST be logged:
 - Authentication attempts (success and failure)
-- Authorization failures (access denied)
+- Authorisation failures (access denied)
 - Input validation failures
 - Account changes (password reset, email change, role changes)
 - Administrative actions
@@ -143,17 +143,17 @@ Flag `console.log` statements in non-test, non-script source files. These bypass
 
 | Issue | Fix |
 |-------|-----|
-| Sensitive data in logs | Sanitize or exclude sensitive fields before logging |
+| Sensitive data in logs | Sanitise or exclude sensitive fields before logging |
 | Missing audit logging | Add logging to auth, authz, and admin actions |
 | Swallowed exceptions | Always log caught exceptions with context |
-| Log injection | Use structured logging (JSON) with parameterized messages |
+| Log injection | Use structured logging (JSON) with parameterised messages |
 | Console.log in production | Replace with structured logger |
 | Missing error context | Include operation, user ID, entity IDs in error logs |
 
 ## False Positive Guidance
 
 - `console.log` in CLI tools, scripts, and test files is expected
-- Logging `req.body` after sanitization (removing sensitive fields) is acceptable
-- Test files that verify logging behavior may contain log statements with sensitive test data
+- Logging `req.body` after sanitisation (removing sensitive fields) is acceptable
+- Test files that verify logging behaviour may contain log statements with sensitive test data
 - Debug-level logging with sensitive context that is disabled in production may be acceptable
 - `password` in log messages that refer to "password reset requested" (not the actual password) is fine

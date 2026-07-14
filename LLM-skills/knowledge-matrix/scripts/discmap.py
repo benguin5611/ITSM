@@ -4,8 +4,9 @@
 The taxonomy is NOT hardcoded to any company or product. There is a GENERIC default
 set of universal engineering disciplines, and everything is overridable per-run via
 config.json — the orchestrator discovers a project-specific taxonomy from the target
-repos (languages, top-level dirs, service names) and writes it into config (see
-SKILL.md Phase 1). All identity and all project-specific structure come from the
+repos (languages, top-level dirs, service names) and writes it to
+taxonomy.discovered.json, which load_config auto-merges (see SKILL.md Phase 2.5).
+All identity and all project-specific structure come from the
 repos at runtime; nothing here names a person, company, product, or internal repo.
 
 config.json keys this module reads (all optional — generic defaults apply):

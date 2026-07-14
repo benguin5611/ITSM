@@ -24,7 +24,7 @@ domain_dirs = collections.Counter()   # e.g. services/<name> -> "<name>"
 repo_info = {}
 
 for f in glob.glob(os.path.join(WORK, "raw", "*.ndjson")):
-    repo = os.path.basename(f)[:-len(".ndjson")].replace(".me", "").replace(".rev", "")
+    repo = os.path.basename(f)[:-len(".ndjson")].replace(".me", "").replace(".rev", "").replace(".cmt", "")
     r = repo_info.setdefault(repo, {"prs": 0, "exts": collections.Counter(), "dirs": collections.Counter()})
     for line in open(f):
         line = line.strip()

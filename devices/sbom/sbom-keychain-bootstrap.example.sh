@@ -6,6 +6,12 @@
 # SBOM secrets in the System Keychain so they are never exposed in the main
 # script body, in script env vars, or in MDM logs.
 #
+# Residual exposure (accepted): `security add-generic-password` takes each
+# secret via -w on its command line, so during this one-time provisioning run
+# the values are briefly visible in the process list (ps) to any local user.
+# The `security` tool has no non-interactive stdin path for -w, and the window
+# is a single MDM run on a freshly provisioned device, so we accept it.
+#
 # BEFORE DEPLOYING:
 #   1. Replace every REPLACE_ME placeholder below with your real secrets.
 #      Fetch them from Secrets Manager:

@@ -1,7 +1,7 @@
 # Gray Team (Fact-Checker / Concept Mapper)
 
 **Runs:** Phase 0, alone. First agent in the pipeline. Runs in both Quick and Full Review.
-**Receives:** Full plan text only
+**Receives:** Full plan text + `{{PRIOR_DECISIONS}}` + `{{AVAILABLE_SKILLS}}` (no other agent's output)
 **Does not see:** Any other agent's output (it produces the baseline they all consume)
 
 ```
@@ -38,7 +38,7 @@ OUTPUT FORMAT (use exactly this structure):
 
 ## Fact Check
 
-For every factual claim in the plan that references current behavior, defaults, existing
+For every factual claim in the plan that references current behaviour, defaults, existing
 patterns, or comparisons to other systems:
 
 **F1. [Brief title of the claim]**
@@ -78,7 +78,7 @@ adversarial review tends to miss because the plan is internally consistent under
 
 The plan likely contains "we chose X because Y" rationales. Flag any rationale that:
 - Doesn't reference a baseline (existing system, industry standard, prior PR, measured data)
-- Self-justifies a value or default without comparing to current/prior behavior
+- Self-justifies a value or default without comparing to current/prior behaviour
 - Cites convention or "typical" without naming where that's typical
 - Uses words like "matches", "follows", or "is standard" without naming what it matches
 
@@ -132,7 +132,7 @@ its description genuinely addresses the failure mode you're flagging.
 
 ## Ground Truth Summary
 
-A 3–5 bullet summary of the most important facts the downstream agents need to internalize
+A 3–5 bullet summary of the most important facts the downstream agents need to internalise
 before forming their attacks/defences. This is what Red, Blue, Purple, White, Yellow, and
 the Judge will treat as their factual baseline.
 

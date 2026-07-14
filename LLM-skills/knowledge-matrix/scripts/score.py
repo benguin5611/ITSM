@@ -89,7 +89,9 @@ if MODE != "self":
         promoted = 0
         for rank, p in enumerate(ranked):
             c = matrix[p]["cells"][d]
-            if c["level"] < 3: break
+            # continue, not break: learner caps make level non-monotone in authority, so a
+            # capped level-2 person can outrank a qualified level-3 candidate
+            if c["level"] < 3: continue
             raw = c.get("raw", {}); a = c.get("authority", 0); net = c.get("net", 0)
             if (a >= max(7.0, 0.55*amax) and net >= 6
                 and (raw.get("led_design",0) >= 1 or raw.get("corrected_others",0) >= 2)
@@ -144,7 +146,7 @@ if MODE != "self":
         promoted = 0
         for rank, p in enumerate(ranked):
             c = repo_matrix[p][r]
-            if c["level"] < 3: break
+            if c["level"] < 3: continue  # continue, not break: level is not monotone in authority
             if c.get("authority",0) >= max(7.0, 0.55*amax) and c.get("net",0) >= 6 and promoted < 3 and rank < 4:
                 c["level"] = 4; promoted += 1
 repo_busfactor = {}

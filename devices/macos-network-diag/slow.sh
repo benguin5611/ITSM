@@ -51,7 +51,7 @@ VPN_UTUN=$(ifconfig | awk '/^utun/{n=$1; sub(":","",n)} /inet 100\./{print n; ex
 echo "Tunnel utun: ${VPN_UTUN:-NONE}"
 ifconfig | awk '/^utun/{n=$1; sub(":","",n); m="?"; for(i=1;i<=NF;i++) if($i=="mtu") m=$(i+1); print n, "MTU", m}'
 echo
-echo "Multiple utuns (especially MTU 1380 with no IPv6) = possible zombies from"
+echo "Multiple utuns (especially MTU 1380 with no IPv4) = possible zombies from"
 echo "kill/respawn cycles. Real fix is a reboot."
 
 # --- 4. Routing ---

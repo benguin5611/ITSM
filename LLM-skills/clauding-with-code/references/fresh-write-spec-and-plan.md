@@ -1,8 +1,8 @@
 # Fresh-write SPEC.md, PR-PLAN.md, and architecture-c4.md from current codebase state
 
 This is the gold-standard methodology for writing (or re-writing) the three canonical feature
-artefacts. It was distilled from the workspace-sharing OTP feature, where all three docs had been
-patched through 50+ commits and had drifted from the code. The methodology applies to any feature.
+artefacts. It was distilled from a long-running feature whose three canonical docs had been
+patched through dozens of commits and had drifted from the code. The methodology applies to any feature.
 
 ## Why fresh write, not patch
 
@@ -97,7 +97,7 @@ Standard C4 structure — keep it. Fresh intro paragraph and updated diagram con
 ## Containers
   ### Data tables and their access roles
 ## Components — inside the API
-## Dynamic view — the claim flow
+## Dynamic view — <key end-to-end flow>
 ```
 
 ---
@@ -161,8 +161,8 @@ Second line: ground the document with a single HEAD reference and branch name. N
 Overview except these two elements.
 
 Example:
-> External sharing in a regtech product is a big feature. The compliance surface, the audit trail,
-> the IAM decoupling, the lifecycle model — all of it is load-bearing. This spec exists at this
+> <Feature name> is a big feature. The security surface, the audit trail, the access-control
+> model, the lifecycle model — all of it is load-bearing. This spec exists at this
 > level of detail because the work earned it: every subsystem traces to a requirement, the PR split
 > is described in PR-PLAN.md, and a reviewing engineer should finish this knowing exactly how the
 > feature works, satisfied it works without breaking its own workflow, adjacent code, or its security

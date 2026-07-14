@@ -41,7 +41,7 @@ If the symptom has one or two causes and one fix per cause, fold it into the **T
 > 3. **Have you been redirected to your company's login page?** If yes, that's expected. See [Why am I being redirected to my company's login page?](#) — your work password is the one you need.
 > 4. **Are you clicking "Sign in with Google" when your account uses a username, password, and MFA?** "Sign in with Google" only works if your administrator has configured Google as your sign-in method. If they haven't, use the email and password fields on the product's sign-in page instead, then enter your MFA code when prompted.
 > 5. **Is your password right?** If you don't use single sign-on, try resetting your password — see [Resetting your password](#).
-> 6. **Is your MFA code being rejected?** Check that your phone's clock is set to update automatically. TOTP codes are time-sensitive; if your clock is more than 30 seconds off, codes will fail.
+> 6. **Is your MFA code being rejected?** Check that your phone's clock is set to update automatically. TOTP codes are time-sensitive; if your clock has drifted, typically by more than a minute (exact tolerance varies by provider), codes will be rejected.
 > 7. **Have you been deactivated?** If you've changed roles or recently left an organisation, your administrator may have removed your access. Confirm with them.
 > 8. **Is the product itself up?** Check the product's status page if it has one. If there's a known issue, you'll see it there.
 >

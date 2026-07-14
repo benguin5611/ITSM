@@ -1,9 +1,6 @@
 # Known Failure Modes
 
-Every one of these was hit in practice. Use this table to diagnose a broken article or to double-check a draft against history.
-
-
-Every one of these was hit in practice. Ordered from worst to least bad.
+Every one of these was hit in practice. Ordered from worst to least bad. Use this table to diagnose a broken article or to double-check a draft against history.
 
 | Failure | Cause | Fix |
 |---|---|---|

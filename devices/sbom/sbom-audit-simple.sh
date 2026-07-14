@@ -22,7 +22,14 @@
 #                  and uploads are spread across an hour.
 #   - MDM self-service: expose as an on-demand action for the user (no flags needed).
 #
-# Requirements: macOS, Homebrew (auto-installs syft and jq if missing).
+# Requirements: macOS. In user context, Homebrew auto-installs syft and jq if
+# missing. Homebrew and its installer both refuse to run as root, so an MDM
+# custom-script deployment (which runs as root) MUST have syft and jq
+# pre-provisioned — package them into the MDM payload in a root-owned location
+# such as /usr/local/bin, or schedule this script in the user's context. Run as
+# root with either tool missing, the script exits with a clear message rather
+# than attempting a doomed install. The heavier sbom-audit-spdx.sh handles the
+# root case itself by dropping to the console user.
 
 set -euo pipefail
 
@@ -139,6 +146,21 @@ fi
 #     convenience outweighs marginal exposure for solo/self-service use; for
 #     tighter pipelines, use sbom-audit-spdx.sh with pre-provisioned tooling.
 
+# Fail fast when running as root and a Homebrew-backed install would be
+# needed. Homebrew and its upstream installer both refuse to run as root, so
+# there is no point attempting either — the run would die mid-install with a
+# confusing brew error. Deployments that run this as root (MDM custom scripts)
+# must pre-provision syft and jq; see the header.
+require_not_root_for_install() {
+	if [ "$(id -u)" -eq 0 ]; then
+		echo "✗ Running as root and $1 is not installed." >&2
+		echo "  Homebrew refuses to install or run as root, so this script" >&2
+		echo "  cannot fetch $1 here. Pre-provision syft and jq via your MDM" >&2
+		echo "  payload (root-owned, e.g. /usr/local/bin), or run in user context." >&2
+		exit 1
+	fi
+}
+
 ensure_homebrew() {
 	if command -v brew &>/dev/null; then
 		return 0
@@ -154,6 +176,7 @@ ensure_homebrew() {
 		export PATH="/usr/local/bin:/usr/local/sbin:${PATH}"
 		return 0
 	fi
+	require_not_root_for_install "Homebrew"
 	echo "→ Homebrew not found. Installing via upstream installer (accepted risk — see header comment)..."
 	if ! /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; then
 		echo "✗ Homebrew install failed" >&2
@@ -173,6 +196,7 @@ ensure_tool() {
 	if command -v "$tool" &>/dev/null; then
 		return 0
 	fi
+	require_not_root_for_install "$tool"
 	echo "→ Installing $tool via Homebrew (unpinned — accepted risk, see header comment)..."
 	brew install "$tool"
 }
@@ -194,7 +218,10 @@ if [ "$FAST" -eq 1 ]; then
 	fi
 fi
 
-HOSTNAME_SAFE=$(hostname -s | tr -c 'A-Za-z0-9._-' '-')
+# Strip the trailing newline before `tr -c`, otherwise the complement class
+# rewrites that newline to '-' and every hostname picks up a trailing dash
+# (giving sbom-host--<timestamp> and a documentNamespace ending in host--).
+HOSTNAME_SAFE=$(hostname -s | tr -d '\n' | tr -c 'A-Za-z0-9._-' '-')
 TIMESTAMP=$(date -u +%Y-%m-%dT%H-%M-%SZ)
 
 if [ -z "$OUTPUT" ]; then
@@ -231,11 +258,11 @@ trap 'rm -rf "$RAW_DIR"' EXIT
 echo "→ Scanning $SCAN_PATH with syft..."
 echo "  (this can take several minutes for a full system scan)"
 
-# Excludes fall into three groups:
+# Excludes fall into four groups:
 #   1. Source-control internals — .git contains pack files that syft mis-detects
 #      as packages and scanning them balloons runtime with no real signal.
 #   2. Per-language package-manager caches — these are downloaded copies of
-#      registry artifacts, not installed packages. The authoritative inventory
+#      registry artefacts, not installed packages. The authoritative inventory
 #      lives in each project's lock file (which CI/GitHub SBOM already captures);
 #      scanning the caches duplicates that data and inflates the SBOM with
 #      transitive dependencies that aren't actually installed on the device.

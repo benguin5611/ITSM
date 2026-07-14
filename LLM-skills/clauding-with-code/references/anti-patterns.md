@@ -1,6 +1,6 @@
 # clauding-with-code — failure catalogue → anti-patterns
 
-The mistakes this skill exists to prevent. Each one was paid for in a real build; each is generalised into an anti-pattern with its symptom, why it bites, and what to do instead. (Process only — no project, stack, or feature specifics. For the concrete real-world instance of each, see `references/project-binding.md`.)
+The mistakes this skill exists to prevent. Each one was paid for in a real build; each is generalised into an anti-pattern with its symptom, why it bites, and what to do instead. (Process only — no project, stack, or feature specifics. Record the concrete instance of each in `references/project-binding.md` as it occurs on your project.)
 
 ## A1. Assumed-generic is a trap
 **Symptom:** you lean on a "shared" or "generic" component because the name promises it is reusable and decoupled.

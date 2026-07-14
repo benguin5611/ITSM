@@ -38,11 +38,11 @@ def digest_pr(repo, pr):
 
 allpr = []
 for f in sorted(glob.glob(os.path.join(WORK, "raw", "*.ndjson"))):
-    repo = os.path.basename(f)[:-len(".ndjson")].replace(".me", "").replace(".rev", "")
+    repo = os.path.basename(f)[:-len(".ndjson")].replace(".me", "").replace(".rev", "").replace(".cmt", "")
     for line in open(f):
         line = line.strip()
         if line: allpr.append(digest_pr(repo, json.loads(line)))
-# de-dupe (self mode harvests author+reviewer separately)
+# de-dupe (self mode harvests author/reviewer/commenter into separate files)
 seen = {}
 for dg in allpr: seen[(dg["repo"], dg["number"])] = dg
 allpr = list(seen.values())

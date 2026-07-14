@@ -1,6 +1,6 @@
 #!/bin/zsh
 #
-# twingate-enforce-remediate.sh — MDM Twingate LaunchAgent install
+# twingate-remediate.sh — MDM Twingate LaunchAgent install
 # + zombie utun mitigation + user-facing reboot notification.
 #
 # Installs a LaunchAgent that:
@@ -140,7 +140,7 @@ if (( ZOMBIE_MITIGATION == 1 )); then
 
         MTU=$(ifconfig "$iface" 2>/dev/null | awk '/mtu/ {for(i=1;i<=NF;i++) if($i=="mtu") print $(i+1)}')
 
-        # Only mitigate utuns with Twingate's documented default MTU (1380).
+        # Only mitigate utuns with Twingate's observed default MTU (1380).
         # MTU 1500 deliberately not matched — too many other macOS services
         # use it (iCloud Private Relay, generic VPNs). Reboot clears those.
         if [[ "$MTU" == "1380" ]]; then

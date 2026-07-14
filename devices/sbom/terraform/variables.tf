@@ -11,7 +11,7 @@ variable "aws_region" {
 }
 
 variable "lambda_reserved_concurrency" {
-  description = "Reserved concurrency for the Lambda. Enter 0 on a fresh AWS account (account-wide concurrency minimum is 10 by default, so reserving any is rejected). Enter 10 on a mature production account."
+  description = "Reserved concurrency for the Lambda. Enter 0 on a fresh AWS account: fresh accounts have a 10-unit account concurrency quota and Lambda requires 100 units to stay unreserved, so any reservation is rejected. Enter 10 on a mature production account."
   type        = number
 
   validation {
