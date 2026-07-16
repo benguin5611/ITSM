@@ -40,6 +40,9 @@ var (
 	checksumPattern = regexp.MustCompile(`^[0-9a-fA-F]{64}$`) // SHA-256 hex
 	// uuid.New() emits 36-char canonical UUIDs (8-4-4-4-12 hex).
 	correlationIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	// Control characters are stripped from attacker-influenced values before
+	// they reach a log, so a crafted value cannot split or forge log entries.
+	logControlChars = regexp.MustCompile(`[[:cntrl:]]`)
 
 	presignExpiryDuration = time.Minute * 30
 
@@ -384,7 +387,7 @@ func handleS3Event(ctx context.Context, event events.S3Event) (string, error) {
 		rawDeviceID := deviceID
 		if deviceID = sanitizeDeviceID(deviceID); deviceID == unknownDeviceID {
 			slog.Error("You shall not pass",
-				"device_id", truncate(rawDeviceID, maxDeviceIDLen),
+				"device_id", sanitizeForLog(truncate(rawDeviceID, maxDeviceIDLen)),
 				"correlation_id", correlationID)
 			continue
 		}
@@ -654,6 +657,13 @@ func truncate(s string, n int) string {
 		return s
 	}
 	return s[:n]
+}
+
+// sanitizeForLog strips control characters (including CR and LF) from a value
+// before it is logged, so an attacker-influenced field such as a rejected
+// device ID cannot inject line breaks and forge or split log entries.
+func sanitizeForLog(s string) string {
+	return logControlChars.ReplaceAllString(s, "")
 }
 
 // presignSignature computes HMAC-SHA256 signature for presigned URL verification
