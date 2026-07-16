@@ -5,6 +5,9 @@
 bootstrap
 *.zip
 terraform/build/
+# Local `go build` output for the validator (built only to compile-check;
+# the deployable artifact is `bootstrap`, above).
+spdx-sbom-audit
 
 # jq atomic-write temp files (used by the device script's clean utility)
 *.tmp
