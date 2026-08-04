@@ -265,6 +265,11 @@ is the full catalogue. The headline ones:
   a coded requirement, carry the prose that explains the behaviour, not the ID that filed it; sweep for
   the ID shapes before each PR. They're noise that points at a doc the next developer can't see (and an
   AI-process tell). See anti-pattern A22.
+- **Comments carry the load-bearing why only — never narrated forensics.** A comment earns its place by
+  stating something the code can't: a hidden constraint, an invariant, a bug workaround, a non-obvious
+  consequence — in one line or a short few. The debugging journey (what was tried, what failed, why you
+  landed here) belongs in the PR description or commit body, not the source. First-class requirement: a
+  diff whose comment lines outweigh its code lines fails review on that basis alone. See anti-pattern A23.
 
 ## Worked example (anonymised composite)
 
