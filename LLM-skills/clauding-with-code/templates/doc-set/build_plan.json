@@ -1,0 +1,32 @@
+{
+  "build_rules": [
+    {"id": "BR-01", "text": "<a cross-cutting rule every step obeys>"}
+  ],
+  "phases": [
+    {
+      "number": 0,
+      "title": "<phase title>",
+      "tier2": {
+        "security": "<BP-NNN or ADR-NNNN>",
+        "compatibility": "<BP-NNN or ADR-NNNN>",
+        "regression": "<BP-NNN or ADR-NNNN>",
+        "interoperability": "<BP-NNN or ADR-NNNN>"
+      },
+      "steps": [
+        {
+          "id": "BP-001",
+          "title": "<title>",
+          "body_md": "- **Context:** <why>\n- **Do:** <the work>\n- **Verify:** <how you know>",
+          "do_touches": [],
+          "verify_test": null,
+          "discharges": [],
+          "decision_ref": null,
+          "blocked_on": null,
+          "cancelled": false,
+          "partial_note": null
+        }
+      ]
+    }
+  ],
+  "variance_log": []
+}

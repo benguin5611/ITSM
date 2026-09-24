@@ -1,0 +1,47 @@
+{
+  "build_rules": [
+    {"id": "BR-01", "text": "Every unit runs the gate commands in docs/binding.md before commit; hooks are never bypassed."}
+  ],
+  "phases": [
+    {
+      "number": 0,
+      "title": "Environment and toolchain",
+      "phase_intro": "Optional prose that applies to every step in this phase.",
+      "tier2": {
+        "security": "ADR-0001",
+        "compatibility": "BP-002",
+        "regression": "BP-002",
+        "interoperability": "ADR-0001"
+      },
+      "steps": [
+        {
+          "id": "BP-001",
+          "title": "Repo skeleton and gate commands",
+          "body_md": "- **Context:** hand-authored prose, rendered verbatim; rationale, dated corrections, evidence.\n- **Do:** create the skeleton; wire the gate commands from docs/binding.md into the pre-commit hook.\n- **Verify:** the hook runs and exits 0 on a clean tree.",
+          "do_touches": ["docs/binding.md"],
+          "verify_test": "tests/test_gate.py::test_hook_runs",
+          "discharges": ["REQ-OPS-001"],
+          "decision_ref": null,
+          "blocked_on": null,
+          "cancelled": false,
+          "partial_note": null
+        },
+        {
+          "id": "BP-002",
+          "title": "Pinned-target compatibility and regression suite",
+          "body_md": "- **Do:** run the suite on the pinned runtime named in docs/binding.md; add one regression test per prior real finding.",
+          "do_touches": [],
+          "verify_test": "tests/test_compat.py",
+          "discharges": ["REQ-OPS-002"],
+          "decision_ref": null,
+          "blocked_on": null,
+          "cancelled": false,
+          "partial_note": null
+        }
+      ]
+    }
+  ],
+  "variance_log": [
+    {"date": "2026-01-01", "plan_said": "one phase", "reality": "two", "resolution": "ADR-0001"}
+  ]
+}

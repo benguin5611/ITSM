@@ -48,7 +48,7 @@ Build, edit, and audit JSON schemas in any format. Domain knowledge is plugged i
 
 ### [clauding-with-code/](clauding-with-code/)
 
-Build orchestrator for shipping a feature or service with an AI coding agent, end to end. Drives the lifecycle in phases (a blocking discovery gate, a single authoritative spec, a small-step build loop, a delegated multi-lens review, a git-proven PR split, and end-of-run archival), pausing for the human at every real fork. Project-agnostic: the concrete stack, CI pipeline, and local replica are bound in one quarantine file (`references/project-binding.md`) you fill in for your own project.
+Build orchestrator for shipping a feature or service with an AI coding agent, end to end. Drives the lifecycle in phases (a blocking discovery gate, a single authoritative spec, a small-step build loop, a delegated multi-lens review, a git-proven PR split, and end-of-run archival), pausing for the human at every real fork. Project-agnostic: the concrete stack, build/test commands, and model tiers are bound in `docs/binding.md` inside your own project (seeded from `templates/binding.md` on first use) — the skill itself holds no project facts. Bundles `driftguard`, a standalone Python doc-drift checker used during the spec phase.
 
 ### [meta-code-review/](meta-code-review/)
 

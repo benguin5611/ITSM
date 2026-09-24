@@ -1,64 +1,59 @@
-# Build loop — small unit → lint → CI-mirror → commit → push when green
+# Phase 2 — build loop
 
-Build discipline for the implementation phase. Code is shipped in **small, verifiable units**, each
-run through the same tight loop. The loop is not bureaucracy — it serves the prime directives:
-linting and static analysis enforce **secure-by-design** and **match-conventions** for free, every
-iteration, without you having to remember to. Concrete toolchain, commands, and versions →
-[`project-binding.md`](project-binding.md).
+## Before each unit
 
-## Before you write: three parallel tracks
+Four checks, seconds each: is this the right change in the right place; does it already exist in the
+repo; which pattern is current — the decision log's, not the nearest file's; and is anything the gate
+left open now due. An open decision (`TBD`, `undecided`, "X or Y" in any doc) is a fork: stop, put it
+to the human with a recommendation against the whole roadmap, write the answer into the doc, then
+code. New information that contradicts a Phase 0 artefact goes back to the gate the same way.
 
-Run these three checks before starting each unit — they take seconds and prevent the most common pre-commit mistakes:
+## The loop
 
-- **Correctness** — is your planned approach solving the right problem in the right place?
-- **Existing alternatives** — does this already exist somewhere in the repo? (directive #3: minimise additions)
-- **Pattern/theme consistency** — what's the established pattern here? (directive #2: match conventions)
+Small unit → the binding's gate commands → `driftguard check --staged` → breaking-change oracle if set
+→ commit → push only when the human says and everything is green.
 
-A quick targeted read or grep is enough. Skipping them is how you build the correct solution to the wrong problem, reinvent an existing utility, or write code that reads as foreign in the codebase.
+A unit is one coherent change you can describe in a line. Hooks are never bypassed; a hook that seems
+hung is usually the harness's own tool timeout — raise the timeout, do not diagnose the hooks. After
+any interrupted commit, verify the restored tree before trusting it. Run against the replica from the
+binding often; tests against your own stubs prove only that the code matches your assumptions.
 
-## The loop (every unit, no exceptions)
+## The two-tier gate
 
-1. **Write a small unit.** One coherent, verifiable change — a function, a handler, a migration, a
-   component. Small enough to reason about, test, and revert in one piece. If you can't describe it
-   in one line, it's too big — split it.
-2. **Lint / format / static-analyse.** Run the full linter, formatter, and static-analysis suite
-   **every loop**. Never bypassed, never deferred to "later". They catch convention drift and a
-   whole class of security defects before they ever reach a commit.
-3. **Test in a production-replica environment.** Run against an environment that mirrors production —
-   same services, same auth, same data shape. **Self-referential local tests prove nothing**: a unit
-   test against stubs you wrote passes by construction. A production replica surfaces the real
-   failures — auth, mail, tenancy, concurrency, network — that the happy path hides. Run it
-   **frequently**, not just at the end.
-4. **Run the local CI mirror, scoped to changed files.** Reproduce the CI pipeline locally — same
-   commands, same tool versions — but scope it to what you touched so the loop stays fast. CI must
-   fail **locally first**, never on push. The mirror is **fail-fast**: stop on the first failure,
-   fix it, re-run.
-5. **Commit small, with a descriptive message.** One unit, one commit, a message that says what
-   changed and why. Small commits keep the history bisectable and the eventual PR split clean.
-6. **Push only when green.** Lint clean, production-replica tests passing, local CI mirror green.
-   A red push is a defect — it burns shared CI and breaks others.
+Tier 1 runs every unit and is entirely mechanical: lint, format, types, tests at pinned versions,
+`driftguard`, the breaking-change oracle, adoption census, secret scan. Green is exit 0. Its evidence
+is the command output; nothing is written about it.
 
-## Non-negotiables
+Tier 2 is scheduled, one build step each with its own `verify_test`: a security review (delegate to
+the review skill in the binding), compatibility on the pinned target, regression against named past
+findings, interoperability across a live seam on a stated cadence. Each phase in `build_plan.json`
+names the step or decision that carries each dimension; an empty key fails `driftguard`. Never invent a
+log file to record that a dimension was checked — the step's computed status is the record.
 
-- **Linters/formatters/static-analysis run every loop and are never bypassed.** They are the
-  cheapest enforcement of directives 1 (secure by design) and 2 (match conventions) available —
-  free, automatic, every iteration. Suppressing a warning to "move on" is moving the defect
-  downstream, not removing it.
-- **Never bypass commit hooks.** No `--no-verify`, no skipping pre-commit, no disabling the gate.
-  The hooks exist because something was once shipped without them. The only exception is an explicit
-  human instruction, recorded.
-- **Production-replica over self-reference.** Frequent runs against a real-shaped environment beat a
-  large suite of tests that only exercise your own mocks. Prove the unit works where it will
-  actually run.
-- **Mirror the CI pipeline locally before you need it.** If CI can fail, it should be able to fail
-  on your machine first. Scope to changed files for speed; widen before the PR.
-- **Small units, small commits.** Big-bang changes hide defects and make review and PR-splitting
-  painful. Keep the increment reviewable.
+## Three states
 
-## Why the loop serves the directives
+A step is open (on the critical path), parked (blocked purely on something outside this project —
+needs a `decision_ref`, a ticket in the other team's tracker, and it shows in the index count), or
+closed (settled forever). Parked is never conflated with closed; the index surfaces the parked count
+so revisiting does not rely on memory.
 
-The discipline is not for its own sake. **Lint = secure-by-design + match-conventions**, enforced
-automatically. The CI mirror = the environmental pre-mortem made continuous — the real failures
-caught locally, every loop, instead of on push or in production. Small units + small commits = a
-clean, bisectable history that makes the later review and git-proven PR split cheap. Keep the loop
-tight and the expensive phases downstream get cheaper.
+## Commits and PRs
+
+One logical change per commit; codegen and formatting churn in their own commits, verbatim, never
+hand-edited; tests land with the code they cover; never commit secrets, artefacts, debug output or
+editor cruft — review `git status` and stage intentionally. Subject: `type(scope): KEY-NNN summary`,
+imperative, no full stop; the tracker key from the binding rides every commit and the PR title. The PR
+body is a thesis paragraph — what the reviewer should expect and why, proportional to complexity, never
+a restated diff or a log. A body that admits a stopgap opens the tracked ID for the real fix in the
+same change. Confirm repo visibility before adding any AI attribution trailer; public means none.
+
+Integrate by merging trunk into a shared branch and rebasing only an unpushed one; never rewrite
+pushed history. Resolve conflicts by reading both sides; regenerate generated files and diff the
+result before staging — content that vanished is the source losing a row, not the generator working.
+On a CI failure, pull every job's log and fix everything locally in one pass.
+
+## Scope
+
+Fix what you find when it is small; offer everything larger as a list the human can accept in one
+line. A narrow instruction returns exactly the narrow change plus that list. Keep a live TODO list of
+units and tick each as it lands; state unprompted what is pending the human's call.
