@@ -1,0 +1,108 @@
+# driftguard.toml for the graduated doc set: per-file ADRs, a JSON-sourced build plan rendered as
+# per-phase slices, an ID register with backlinks, and source-side leak/adoption checks.
+# Paths are relative to this file (repo root). See templates/doc-set/CONVENTIONS.md for the ID classes.
+
+docs = ["docs/**/*.md"]
+plugins = []
+
+[[id_classes]]
+name = "REQ"
+ref = '\bREQ-[A-Z]+-\d{3}\b'
+def = '(?m)^\*\*(REQ-[A-Z]+-\d{3})\b'
+ears = true
+allocate = true
+ignore = ["REQ-DOMAIN-NNN"]
+
+[[id_classes]]
+name = "INV"
+ref = '\bINV-\d+\b'
+def = '(?m)^\|\s*(INV-\d+)\s*\|'
+
+[[id_classes]]
+name = "ADR"
+ref = '\bADR-\d{4}\b'
+def = '(?m)^# (ADR-\d{4})\b'
+def_files = ["docs/decisions/ADR-*.md"]
+filename_must_match = true
+allocate = true
+
+[[id_classes]]
+name = "BP"
+ref = '\bBP-\d{3}\b'
+def = '(?m)^\*\*(BP-\d{3}) \(Phase'
+allocate = true
+
+[[id_classes]]
+name = "BR"
+ref = '\bBR-\d{2}\b'
+def = '(?m)^- \*\*(BR-\d{2})\*\*'
+
+[[id_classes]]
+name = "PH"
+ref = '\bPhase \d+\b'
+def = '(?m)^## (Phase \d+)\b'
+def_files = ["docs/generated/BUILD_PLAN.md"]
+
+[[templates]]
+match = "docs/decisions/ADR-*.md"
+required = ["## Context", "## Decision", "## Declined alternatives", "## Verification"]
+
+[[templates]]
+match = "docs/SPEC.md"
+required = ["## Purpose and exit criteria", "## Invariants", "## Requirements", "## Acceptance",
+            "## Testing guide", "## Verification ledger"]
+
+[[templates]]
+match = "docs/binding.md"
+required = ["## Stack", "## Gate commands", "## Breaking-change oracle", "## CI", "## Tracker", "## Merge policy",
+            "## Model tiers", "## Replica", "## Review skills", "## Paths", "## Policies"]
+
+[[banned]]
+pattern = '(?m)^#{1,3}\s*(Known Gaps|Outstanding|Open Items)\b'
+message = "a known gap is a job to be done: give it a BP-ID, not a list"
+
+[[banned]]
+pattern = '(?m)^-\s*\*\*(Do|Verify|Discharges):'
+message = "Do/Verify/Discharges is build-plan vocabulary; a REQ or ADR only cites the BP-ID"
+files = ["docs/SPEC.md", "docs/decisions/*.md", "docs/STRATEGY.md"]
+
+[leaks]
+globs = ["src/**/*", "cmd/**/*", "internal/**/*", "lib/**/*"]
+
+[[adoption]]
+name = "http-client"
+pattern = 'httpx\.Client\('
+glob = ["src/**/*.py"]
+allow_files = ["src/core/http.py"]
+justification_pattern = '(?i)deliberately not (using|routed through) owned_http_client'
+message = "construct the shared HTTP client via owned_http_client()"
+
+[currency]
+docs = ["docs/decisions/*.md", "docs/SPEC.md"]
+
+[[registries]]
+name = "build_plan"
+kind = "build_plan"
+source = "docs/build_plan.json"
+output = "docs/generated/BUILD_PLAN.md"
+slice_by = "phase"
+runner = ["uv", "run", "pytest", "-q"]
+strict_coverage = true
+require_tier2 = true
+
+[[registries]]
+name = "id_register"
+kind = "id_register"
+output = "docs/generated/ID_REGISTER.md"
+backlinks = true
+
+[[registries]]
+name = "bugs"
+kind = "table"
+source = "docs/bug_registry.json"
+output = "docs/generated/BUG_REGISTRY.md"
+runner = ["uv", "run", "pytest", "-q"]
+status_labels = { pass = "Fixed", fail = "Confirmed-Unfixed", decision = "WontFix" }
+columns = [["ID", "id"], ["Class", "class"], ["Status", "status"], ["Summary", "summary"],
+           ["Locations", "locations"], ["Regression test", "regression_test"], ["Decision", "decision_ref"]]
+id_pattern = '^BUG-\d{3}$'

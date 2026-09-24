@@ -1,0 +1,43 @@
+# driftguard.toml for a small build: one SPEC-light file, no registries. The Phase 0 discovery gate
+# is a scratch file in ~/Downloads, never committed, so it is not covered here.
+# Paths are relative to this file. Copy to the repo root (or docs/) and adjust the globs.
+
+docs = ["docs/**/*.md"]
+
+[[id_classes]]
+name = "REQ"
+ref = '\bREQ-\d{3}\b'
+def = '(?m)^\*\*(REQ-\d{3})\b'
+ears = true
+allocate = true
+
+[[id_classes]]
+name = "INV"
+ref = '\bINV-\d+\b'
+def = '(?m)^\*\*(INV-\d+)\b'
+
+[[id_classes]]
+name = "ADR"
+ref = '\bADR-\d{4}\b'
+def = '(?m)^\*\*(ADR-\d{4})\b'
+allocate = true
+
+[[templates]]
+match = "docs/SPEC.md"
+required = ["## Purpose and scope", "## Invariants and decisions", "## Requirements", "## Acceptance",
+            "## Testing guide", "## Build sequence", "## Verification ledger"]
+
+[[templates]]
+match = "docs/binding.md"
+required = ["## Stack", "## Gate commands", "## Breaking-change oracle", "## CI", "## Tracker", "## Merge policy",
+            "## Model tiers", "## Replica", "## Review skills", "## Paths", "## Policies"]
+
+[[banned]]
+pattern = '(?m)^#{1,3}\s*(Known Gaps|Outstanding|Open Items)\b'
+message = "a known gap is a job to be done: give it a step ID, not a list"
+
+[leaks]
+globs = ["src/**/*", "cmd/**/*", "internal/**/*", "lib/**/*"]
+
+[currency]
+docs = ["docs/**/*.md"]

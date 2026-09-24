@@ -1,0 +1,26 @@
+[project]
+name = "driftguard"
+version = "0.1.0"
+description = "Reference-integrity and drift checks for a markdown doc set, plus generated registries with computed status."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = []
+
+[project.scripts]
+driftguard = "driftguard.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["uv_build>=0.8,<1"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "driftguard"
+module-root = ""
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
